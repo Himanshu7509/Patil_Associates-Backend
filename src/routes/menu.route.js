@@ -8,7 +8,8 @@ import {
   deleteMenuItem,
   getMenuItemsByCategory,
   getDietaryMenuItems,
-  searchMenuItems
+  searchMenuItems,
+  uploadMenuItemImage
 } from '../controllers/menu.controller.js';
 import { protect, authorize } from '../middleware/auth.middleware.js';
 
@@ -40,5 +41,9 @@ router.route('/:id')
   .get(getMenuItemById)    // Get menu item by ID
   .put(updateMenuItem)     // Update menu item
   .delete(deleteMenuItem); // Delete menu item
+
+// Image upload route
+router.route('/upload/image')
+  .post(uploadMenuItemImage); // Upload menu item image
 
 export default router;

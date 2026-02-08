@@ -398,9 +398,27 @@ Admin routes require the user to have 'admin' role.
   "ingredients": ["salmon", "lemon", "herbs", "butter"],
   "dietaryOptions": ["gluten_free"],
   "isActive": true,
-  "image": "https://example.com/salmon.jpg",
   "cookingTime": 15
 }
+```
+
+**Request with Image:**
+```bash
+curl -X POST http://localhost:3000/api/menu/ \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "name=Grilled Salmon" \
+  -F "description=Fresh Atlantic salmon with lemon herb butter" \
+  -F "price=24.99" \
+  -F "category=main_course" \
+  -F "ingredients=salmon" \
+  -F "ingredients=lemon" \
+  -F "ingredients=herbs" \
+  -F "ingredients=butter" \
+  -F "dietaryOptions=gluten_free" \
+  -F "isActive=true" \
+  -F "cookingTime=15" \
+  -F "image=@path/to/salmon-image.jpg"
 ```
 
 **Response:**
@@ -417,7 +435,7 @@ Admin routes require the user to have 'admin' role.
     "ingredients": ["salmon", "lemon", "herbs", "butter"],
     "dietaryOptions": ["gluten_free"],
     "isActive": true,
-    "image": "https://example.com/salmon.jpg",
+    "image": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg",
     "cookingTime": 15,
     "createdAt": "2026-02-07T10:30:00.000Z",
     "updatedAt": "2026-02-07T10:30:00.000Z"
@@ -466,10 +484,40 @@ Admin routes require the user to have 'admin' role.
 
 **Authentication:** Required (Admin only)
 
+**Request Body:**
+```json
+{
+  "name": "Updated Grilled Salmon",
+  "description": "Fresh Atlantic salmon with lemon herb butter - Updated",
+  "price": 26.99,
+  "category": "main_course",
+  "ingredients": ["salmon", "lemon", "herbs", "butter", "garlic"],
+  "dietaryOptions": ["gluten_free", "dairy_free"],
+  "isActive": true,
+  "cookingTime": 18
+}
+```
+
+**Request with Image Update:**
+```bash
+curl -X PUT http://localhost:3000/api/menu/:id \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "name=Updated Grilled Salmon" \
+  -F "description=Fresh Atlantic salmon with lemon herb butter - Updated" \
+  -F "price=26.99" \
+  -F "category=main_course" \
+  -F "isActive=true" \
+  -F "cookingTime=18" \
+  -F "image=@path/to/new-salmon-image.jpg"
+```
+
 ### Delete Menu Item
 **DELETE** `/api/menu/:id`
 
 **Authentication:** Required (Admin only)
+
+**Note:** When deleting a menu item, any associated image stored in S3 will be automatically removed.
 
 ### Get Menu Items by Category
 **GET** `/api/menu/category/:category`
@@ -560,6 +608,32 @@ Admin routes require the user to have 'admin' role.
 }
 ```
 
+### Upload Menu Item Image
+**POST** `/api/menu/upload/image`
+
+**Authentication:** Required (Admin only)
+
+**Description:** Upload an image for a menu item to S3 storage. This endpoint allows you to upload images separately without creating or updating a menu item immediately.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/api/menu/upload/image \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "image=@path/to/menu-item-image.jpg"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Menu item image uploaded successfully",
+  "data": {
+    "imageUrl": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg"
+  }
+}
+```
+
 ## Error Handling
 
 All API responses follow a consistent format:
@@ -618,6 +692,10 @@ MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=your_admin_password
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=your_aws_region
+AWS_BUCKET_NAME=your_s3_bucket_name
 ```
 
 4. Start the server:
@@ -638,6 +716,10 @@ npm start
 | JWT_SECRET | Secret key for JWT tokens | Yes |
 | ADMIN_EMAIL | Admin user email | Yes |
 | ADMIN_PASSWORD | Admin user password | Yes |
+| AWS_ACCESS_KEY_ID | AWS Access Key ID for S3 | Yes (for image storage) |
+| AWS_SECRET_ACCESS_KEY | AWS Secret Access Key for S3 | Yes (for image storage) |
+| AWS_REGION | AWS Region for S3 bucket | Yes (for image storage) |
+| AWS_BUCKET_NAME | S3 bucket name for storing images | Yes (for image storage) |
 
 ### Default Admin Account
 To create an admin account, register with the email specified in `ADMIN_EMAIL` and the password in `ADMIN_PASSWORD`. The system will automatically assign the 'admin' role.
