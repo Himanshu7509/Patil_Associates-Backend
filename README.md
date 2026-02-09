@@ -634,6 +634,1010 @@ curl -X POST http://localhost:3000/api/menu/upload/image \
 }
 ```
 
+## Hotel Management APIs
+
+### Create Hotel Room
+**POST** `/api/hotel/rooms/`
+
+**Authentication:** Required (Admin only)
+
+**Request Body (JSON):**
+```json
+{
+  "roomNumber": "101",
+  "roomType": "deluxe",
+  "floor": 1,
+  "capacity": 2,
+  "pricePerNight": 150.00,
+  "amenities": ["wifi", "ac", "tv", "mini_bar"],
+  "viewType": "city",
+  "bedType": "king",
+  "size": 350,
+  "description": "Spacious deluxe room with city view",
+  "isActive": true,
+  "isAvailable": true,
+  "maintenanceNotes": "Recently renovated"
+}
+```
+
+**Request with Images (multipart/form-data):**
+```bash
+curl -X POST http://localhost:3000/api/hotel/rooms/ \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "roomNumber=101" \
+  -F "roomType=deluxe" \
+  -F "floor=1" \
+  -F "capacity=2" \
+  -F "pricePerNight=150.00" \
+  -F "amenities=wifi" \
+  -F "amenities=ac" \
+  -F "amenities=tv" \
+  -F "amenities=mini_bar" \
+  -F "viewType=city" \
+  -F "bedType=king" \
+  -F "size=350" \
+  -F "description=Spacious deluxe room with city view" \
+  -F "isActive=true" \
+  -F "isAvailable=true" \
+  -F "maintenanceNotes=Recently renovated" \
+  -F "images=@path/to/room-image1.jpg" \
+  -F "images=@path/to/room-image2.jpg"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Room created successfully",
+  "data": {
+    "_id": "room_id",
+    "roomNumber": "101",
+    "roomType": "deluxe",
+    "floor": 1,
+    "capacity": 2,
+    "pricePerNight": 150.00,
+    "amenities": ["wifi", "ac", "tv", "mini_bar"],
+    "viewType": "city",
+    "bedType": "king",
+    "size": 350,
+    "description": "Spacious deluxe room with city view",
+    "images": [
+      "https://s3.amazonaws.com/bucket-name/patil-associate/hotel-rooms/unique-filename1.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/hotel-rooms/unique-filename2.jpg"
+    ],
+    "isActive": true,
+    "isAvailable": true,
+    "maintenanceNotes": "Recently renovated",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+### Get All Hotel Rooms
+**GET** `/api/hotel/rooms/`
+
+**Authentication:** Optional (Public access to active rooms)
+
+**Query Parameters:**
+- `isActive` (boolean): Filter by active status
+- `isAvailable` (boolean): Filter by availability
+- `roomType` (string): Filter by room type
+- `viewType` (string): Filter by view type
+- `floor` (number): Filter by floor number
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Rooms retrieved successfully",
+  "data": [
+    {
+      "_id": "room_id",
+      "roomNumber": "101",
+      "roomType": "deluxe",
+      "floor": 1,
+      "capacity": 2,
+      "pricePerNight": 150.00,
+      "amenities": ["wifi", "ac", "tv", "mini_bar"],
+      "viewType": "city",
+      "isAvailable": true,
+      "isActive": true
+    }
+  ],
+  "count": 15
+}
+```
+
+### Get Hotel Room by ID
+**GET** `/api/hotel/rooms/:id`
+
+**Authentication:** Required (Admin only)
+
+### Update Hotel Room
+**PUT** `/api/hotel/rooms/:id`
+
+**Authentication:** Required (Admin only)
+
+**Request Body:**
+```json
+{
+  "roomType": "suite",
+  "pricePerNight": 250.00,
+  "isAvailable": false,
+  "maintenanceNotes": "Under maintenance until further notice"
+}
+```
+
+**Request with Image Updates:**
+```bash
+curl -X PUT http://localhost:3000/api/hotel/rooms/:id \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "roomType=suite" \
+  -F "pricePerNight=250.00" \
+  -F "isAvailable=false" \
+  -F "maintenanceNotes=Under maintenance until further notice" \
+  -F "images=@path/to/new-room-image1.jpg" \
+  -F "images=@path/to/new-room-image2.jpg"
+```
+
+**Note:** When updating images, all existing images will be deleted from S3 and replaced with the new ones.
+
+### Delete Hotel Room
+**DELETE** `/api/hotel/rooms/:id`
+
+**Authentication:** Required (Admin only)
+
+**Note:** 
+- Cannot delete rooms with active bookings
+- When deleting a room, any associated images stored in S3 will be automatically removed
+
+### Get Available Rooms
+**GET** `/api/hotel/rooms/available?checkInDate=2026-02-15&checkOutDate=2026-02-18&numberOfGuests=2&roomType=deluxe`
+
+**Authentication:** Optional
+
+**Query Parameters:**
+- `checkInDate` (string): Check-in date (required)
+- `checkOutDate` (string): Check-out date (required)
+- `numberOfGuests` (number): Minimum capacity required
+- `roomType` (string): Filter by room type
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Available rooms retrieved successfully",
+  "data": {
+    "checkInDate": "2026-02-15",
+    "checkOutDate": "2026-02-18",
+    "numberOfGuests": 2,
+    "roomType": "deluxe",
+    "availableRooms": [
+      {
+        "_id": "room_id",
+        "roomNumber": "101",
+        "roomType": "deluxe",
+        "floor": 1,
+        "capacity": 2,
+        "pricePerNight": 150.00,
+        "isAvailable": true
+      }
+    ],
+    "count": 8
+  }
+}
+```
+
+### Upload Room Images
+**POST** `/api/hotel/rooms/upload/images`
+
+**Authentication:** Required (Admin only)
+
+**Description:** Upload images for hotel rooms to S3 storage. This endpoint allows you to upload images separately without creating or updating a room immediately.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/api/hotel/rooms/upload/images \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "images=@path/to/room-image1.jpg" \
+  -F "images=@path/to/room-image2.jpg" \
+  -F "images=@path/to/room-image3.jpg"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Room images uploaded successfully",
+  "data": {
+    "imageUrls": [
+      "https://s3.amazonaws.com/bucket-name/patil-associate/hotel-rooms/unique-filename1.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/hotel-rooms/unique-filename2.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/hotel-rooms/unique-filename3.jpg"
+    ]
+  }
+}
+```
+
+### Get Room Statistics
+**GET** `/api/hotel/rooms/stats`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Room statistics retrieved successfully",
+  "data": {
+    "totalRooms": 50,
+    "activeRooms": 45,
+    "availableRooms": 30,
+    "occupiedRooms": 15,
+    "roomTypeStats": [
+      {
+        "_id": "deluxe",
+        "count": 15,
+        "averagePrice": 150.00
+      },
+      {
+        "_id": "suite",
+        "count": 5,
+        "averagePrice": 300.00
+      }
+    ]
+  }
+}
+```
+
+### Create Hotel Booking
+**POST** `/api/hotel/bookings/`
+
+**Authentication:** Required (Customer or Admin)
+
+**Request Body (Authenticated User - Guest info auto-populated):**
+```json
+{
+  "roomId": "room_id",
+  "checkInDate": "2026-02-15",
+  "checkOutDate": "2026-02-18",
+  "numberOfGuests": 2,
+  "totalPrice": 450.00,
+  "specialRequests": "Late check-in requested",
+  "paymentMethod": "credit_card",
+  "bookingSource": "website",
+  "notes": "Honeymoon suite"
+  // guestName, guestEmail, guestPhone automatically populated from user profile
+}
+```
+
+**Request Body (Unauthenticated User - Guest info required):**
+```json
+{
+  "roomId": "room_id",
+  "checkInDate": "2026-02-15",
+  "checkOutDate": "2026-02-18",
+  "numberOfGuests": 2,
+  "totalPrice": 450.00,
+  "specialRequests": "Late check-in requested",
+  "guestName": "John Doe",
+  "guestEmail": "john@example.com",
+  "guestPhone": "+1234567890",
+  "paymentMethod": "credit_card",
+  "bookingSource": "website",
+  "notes": "Honeymoon suite"
+}
+```
+
+**Response (Authenticated User):**
+```json
+{
+  "success": true,
+  "message": "Booking created successfully",
+  "data": {
+    "_id": "booking_id",
+    "customerId": {
+      "_id": "user_id",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "roomId": {
+      "_id": "room_id",
+      "roomNumber": "101",
+      "roomType": "deluxe",
+      "floor": 1
+    },
+    "checkInDate": "2026-02-15T00:00:00.000Z",
+    "checkOutDate": "2026-02-18T00:00:00.000Z",
+    "numberOfGuests": 2,
+    "totalPrice": 450.00,
+    "status": "pending",
+    "guestName": "John Doe",
+    "guestEmail": "john@example.com",
+    "guestPhone": "+919876543210",
+    "specialRequests": "Late check-in requested",
+    "paymentStatus": "pending",
+    "bookingSource": "website",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+**Response (Unauthenticated User):**
+```json
+{
+  "success": true,
+  "message": "Booking created successfully",
+  "data": {
+    "_id": "booking_id",
+    "roomId": {
+      "_id": "room_id",
+      "roomNumber": "101",
+      "roomType": "deluxe",
+      "floor": 1
+    },
+    "checkInDate": "2026-02-15T00:00:00.000Z",
+    "checkOutDate": "2026-02-18T00:00:00.000Z",
+    "numberOfGuests": 2,
+    "totalPrice": 450.00,
+    "status": "pending",
+    "guestName": "Jane Smith",
+    "guestEmail": "jane@example.com",
+    "guestPhone": "+1234567890",
+    "specialRequests": "Late check-in requested",
+    "paymentStatus": "pending",
+    "bookingSource": "website",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+### Get All Hotel Bookings
+**GET** `/api/hotel/bookings/`
+
+**Authentication:** Required
+
+**Query Parameters:**
+- For customers: Returns only their own bookings
+- For admins: Returns all bookings
+
+### Get Hotel Booking by ID
+**GET** `/api/hotel/bookings/:id`
+
+**Authentication:** Required
+
+### Update Hotel Booking
+**PUT** `/api/hotel/bookings/:id`
+
+**Authentication:** Required (Admin only)
+
+### Delete Hotel Booking
+**DELETE** `/api/hotel/bookings/:id`
+
+**Authentication:** Required (Admin only)
+
+### Get Bookings by Date Range
+**GET** `/api/hotel/bookings/date-range?startDate=2026-02-01&endDate=2026-02-28&status=confirmed`
+
+**Authentication:** Optional (Public access shows only confirmed bookings)
+
+### Check Room Availability
+**GET** `/api/hotel/bookings/check-availability?roomId=room_id&checkInDate=2026-02-15&checkOutDate=2026-02-18`
+
+**Authentication:** Optional
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Availability check completed",
+  "data": {
+    "roomId": "room_id",
+    "checkInDate": "2026-02-15",
+    "checkOutDate": "2026-02-18",
+    "isAvailable": true,
+    "reason": "Room is available"
+  }
+}
+```
+
+### Get Booking Statistics
+**GET** `/api/hotel/bookings/stats`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Booking statistics retrieved successfully",
+  "data": {
+    "totalBookings": 150,
+    "pendingBookings": 25,
+    "confirmedBookings": 80,
+    "checkedInBookings": 30,
+    "completedBookings": 100,
+    "cancelledBookings": 15,
+    "statusStats": [
+      {
+        "_id": "confirmed",
+        "count": 80,
+        "totalRevenue": 12000.00
+      }
+    ],
+    "recentBookings": 45
+  }
+}
+```
+
+## Property Management APIs
+
+### Create Property
+**POST** `/api/properties/`
+
+**Authentication:** Required (Admin only)
+
+**Request Body (JSON):**
+```json
+{
+  "title": "Luxury Villa in Mumbai",
+  "description": "Beautiful 4-bedroom villa with sea view",
+  "propertyType": "residential",
+  "listingType": "sale",
+  "address": {
+    "street": "123 Marine Drive",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "zipCode": "400020",
+    "country": "India"
+  },
+  "price": 50000000,
+  "area": 2500,
+  "areaUnit": "sqft",
+  "bedrooms": 4,
+  "bathrooms": 3,
+  "parking": 2,
+  "amenities": ["swimming_pool", "garden", "gym", "security"],
+  "features": ["sea_view", "modern_kitchen", "spa_bathroom"],
+  "isActive": true,
+  "isFeatured": true,
+  "contactInfo": {
+    "name": "John Smith",
+    "email": "john@patilassociate.com",
+    "phone": "+919876543210"
+  }
+}
+```
+
+**Request with Images (multipart/form-data):**
+```bash
+curl -X POST http://localhost:3000/api/properties/ \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "title=Luxury Villa in Mumbai" \
+  -F "description=Beautiful 4-bedroom villa with sea view" \
+  -F "propertyType=residential" \
+  -F "listingType=sale" \
+  -F "address[street]=123 Marine Drive" \
+  -F "address[city]=Mumbai" \
+  -F "address[state]=Maharashtra" \
+  -F "address[zipCode]=400020" \
+  -F "address[country]=India" \
+  -F "price=50000000" \
+  -F "area=2500" \
+  -F "areaUnit=sqft" \
+  -F "bedrooms=4" \
+  -F "bathrooms=3" \
+  -F "parking=2" \
+  -F "amenities=swimming_pool" \
+  -F "amenities=garden" \
+  -F "amenities=gym" \
+  -F "amenities=security" \
+  -F "features=sea_view" \
+  -F "features=modern_kitchen" \
+  -F "features=spa_bathroom" \
+  -F "isActive=true" \
+  -F "isFeatured=true" \
+  -F "contactInfo[name]=John Smith" \
+  -F "contactInfo[email]=john@patilassociate.com" \
+  -F "contactInfo[phone]=+919876543210" \
+  -F "images=@path/to/villa-image1.jpg" \
+  -F "images=@path/to/villa-image2.jpg" \
+  -F "images=@path/to/villa-image3.jpg"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Property created successfully",
+  "data": {
+    "_id": "property_id",
+    "title": "Luxury Villa in Mumbai",
+    "description": "Beautiful 4-bedroom villa with sea view",
+    "propertyType": "residential",
+    "listingType": "sale",
+    "address": {
+      "street": "123 Marine Drive",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "zipCode": "400020",
+      "country": "India"
+    },
+    "price": 50000000,
+    "area": 2500,
+    "areaUnit": "sqft",
+    "bedrooms": 4,
+    "bathrooms": 3,
+    "parking": 2,
+    "amenities": ["swimming_pool", "garden", "gym", "security"],
+    "features": ["sea_view", "modern_kitchen", "spa_bathroom"],
+    "images": [
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename1.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename2.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename3.jpg"
+    ],
+    "isActive": true,
+    "isFeatured": true,
+    "contactInfo": {
+      "name": "John Smith",
+      "email": "john@patilassociate.com",
+      "phone": "+919876543210"
+    },
+    "agentId": "agent_id",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+### Get All Properties
+**GET** `/api/properties/`
+
+**Authentication:** Optional (Public access)
+
+**Query Parameters:**
+- `propertyType` (string): Filter by property type (residential, commercial, etc.)
+- `listingType` (string): Filter by listing type (sale, rent, lease)
+- `isActive` (boolean): Filter by active status
+- `isFeatured` (boolean): Filter by featured status
+- `city` (string): Filter by city
+- `minPrice` (number): Minimum price
+- `maxPrice` (number): Maximum price
+- `bedrooms` (number): Minimum number of bedrooms
+- `search` (string): Search in title, description, or address
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Properties retrieved successfully",
+  "data": [
+    {
+      "_id": "property_id",
+      "title": "Luxury Villa in Mumbai",
+      "propertyType": "residential",
+      "listingType": "sale",
+      "price": 50000000,
+      "area": 2500,
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "images": ["https://s3.amazonaws.com/..."],
+      "isActive": true,
+      "isFeatured": true
+    }
+  ],
+  "count": 15
+}
+```
+
+### Get Property by ID
+**GET** `/api/properties/:id`
+
+**Authentication:** Optional (Public access)
+
+### Update Property
+**PUT** `/api/properties/:id`
+
+**Authentication:** Required (Admin only)
+
+**Request with Image Updates:**
+```bash
+curl -X PUT http://localhost:3000/api/properties/:id \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "price=55000000" \
+  -F "isFeatured=true" \
+  -F "images=@path/to/new-image1.jpg" \
+  -F "images=@path/to/new-image2.jpg"
+```
+
+**Note:** When updating images, all existing images will be deleted from S3 and replaced with the new ones.
+
+### Delete Property
+**DELETE** `/api/properties/:id`
+
+**Authentication:** Required (Admin only)
+
+**Note:** 
+- Cannot delete properties with active listings
+- When deleting a property, any associated images stored in S3 will be automatically removed
+
+### Upload Property Images
+**POST** `/api/properties/upload/images`
+
+**Authentication:** Required (Admin only)
+
+**Description:** Upload images for properties to S3 storage. This endpoint allows you to upload images separately without creating or updating a property immediately.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/api/properties/upload/images \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "images=@path/to/property-image1.jpg" \
+  -F "images=@path/to/property-image2.jpg" \
+  -F "images=@path/to/property-image3.jpg"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Property images uploaded successfully",
+  "data": {
+    "imageUrls": [
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename1.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename2.jpg",
+      "https://s3.amazonaws.com/bucket-name/patil-associate/properties/unique-filename3.jpg"
+    ]
+  }
+}
+```
+
+### Get Featured Properties
+**GET** `/api/properties/featured?limit=10`
+
+**Authentication:** Optional (Public access)
+
+**Query Parameters:**
+- `limit` (number): Number of featured properties to return (default: 10)
+
+### Get Property Statistics
+**GET** `/api/properties/stats`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Property statistics retrieved successfully",
+  "data": {
+    "totalProperties": 150,
+    "activeProperties": 120,
+    "featuredProperties": 25,
+    "saleProperties": 80,
+    "rentProperties": 40,
+    "leaseProperties": 30,
+    "propertyTypeStats": [
+      {
+        "_id": "residential",
+        "count": 90,
+        "averagePrice": 3500000
+      },
+      {
+        "_id": "commercial",
+        "count": 35,
+        "averagePrice": 8000000
+      }
+    ]
+  }
+}
+
+## Property Listing Management APIs
+
+### Create Property Listing (Inquiry/Offer)
+**POST** `/api/property-listings/`
+
+**Authentication:** Optional (Anyone can create inquiries)
+
+**Request Body (Authenticated User - Customer info auto-populated):**
+```json
+{
+  "propertyId": "property_id",
+  "listingType": "inquiry",
+  "customerInfo": {
+    "message": "I'm interested in this property. Please provide more details."
+  },
+  "offerPrice": 48000000,
+  "proposedRent": null,
+  "leaseDuration": null,
+  "moveInDate": "2026-05-01",
+  "notes": "Looking for immediate possession"
+}
+```
+
+**Request Body (Unauthenticated User - Customer info required):**
+```json
+{
+  "propertyId": "property_id",
+  "listingType": "inquiry",
+  "customerInfo": {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "+919876543211",
+    "message": "I'm interested in this property. Please provide more details."
+  },
+  "offerPrice": 48000000,
+  "proposedRent": null,
+  "leaseDuration": null,
+  "moveInDate": "2026-05-01",
+  "notes": "Looking for immediate possession"
+}
+```
+
+**Response (Authenticated User):**
+```json
+{
+  "success": true,
+  "message": "Property listing created successfully",
+  "data": {
+    "_id": "listing_id",
+    "propertyId": {
+      "_id": "property_id",
+      "title": "Luxury Villa in Mumbai",
+      "propertyType": "residential",
+      "listingType": "sale",
+      "price": 50000000
+    },
+    "customerId": {
+      "_id": "user_id",
+      "fullName": "John Doe",
+      "email": "john@example.com",
+      "phoneNo": "+919876543210"
+    },
+    "listingType": "inquiry",
+    "status": "pending",
+    "customerInfo": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+919876543210",
+      "message": "I'm interested in this property. Please provide more details."
+    },
+    "offerPrice": 48000000,
+    "moveInDate": "2026-05-01T00:00:00.000Z",
+    "notes": "Looking for immediate possession",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+**Response (Unauthenticated User):**
+```json
+{
+  "success": true,
+  "message": "Property listing created successfully",
+  "data": {
+    "_id": "listing_id",
+    "propertyId": {
+      "_id": "property_id",
+      "title": "Luxury Villa in Mumbai",
+      "propertyType": "residential",
+      "listingType": "sale",
+      "price": 50000000
+    },
+    "listingType": "inquiry",
+    "status": "pending",
+    "customerInfo": {
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "phone": "+919876543211",
+      "message": "I'm interested in this property. Please provide more details."
+    },
+    "offerPrice": 48000000,
+    "moveInDate": "2026-05-01T00:00:00.000Z",
+    "notes": "Looking for immediate possession",
+    "createdAt": "2026-02-07T10:30:00.000Z",
+    "updatedAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+### Get All Property Listings
+**GET** `/api/property-listings/`
+
+**Authentication:** Required
+
+**Query Parameters:**
+- For customers: Returns only their own listings
+- For agents: Returns listings assigned to them
+- For admins: Returns all listings
+- `listingType` (string): Filter by listing type
+- `status` (string): Filter by status
+- `propertyId` (string): Filter by property ID
+
+### Get Property Listing by ID
+**GET** `/api/property-listings/:id`
+
+**Authentication:** Required
+
+### Update Property Listing
+**PUT** `/api/property-listings/:id`
+
+**Authentication:** Required (Admin/Agent only)
+
+### Delete Property Listing
+**DELETE** `/api/property-listings/:id`
+
+**Authentication:** Required (Admin/Agent only)
+
+### Get Listings by Property ID
+**GET** `/api/property-listings/property/:propertyId`
+
+**Authentication:** Required
+
+### Schedule Property Viewing
+**PUT** `/api/property-listings/:id/schedule-viewing`
+
+**Authentication:** Required (Admin/Agent only)
+
+**Request Body:**
+```json
+{
+  "date": "2026-02-15",
+  "time": "14:30"
+}
+```
+
+### Update Viewing Status
+**PUT** `/api/property-listings/:id/viewing-status`
+
+**Authentication:** Required (Admin/Agent only)
+
+**Request Body:**
+```json
+{
+  "status": "confirmed"
+}
+```
+
+### Upload Documents to Property Listing
+**POST** `/api/property-listings/:listingId/documents`
+
+**Authentication:** Required (Listing owner, agent, or admin)
+
+**Description:** Upload documents (PDF, Word, Excel, images) to a property listing. Documents are stored in S3 and associated with the listing.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/api/property-listings/6989ad85dc846bc552f87a4f/documents \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: multipart/form-data" \
+  -F "documents=@path/to/id-proof.pdf" \
+  -F "documents=@path/to/income-certificate.docx" \
+  -F "documents=@path/to/bank-statement.xlsx"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Documents uploaded successfully",
+  "data": {
+    "_id": "6989ad85dc846bc552f87a4f",
+    "propertyId": {
+      "_id": "6989a410deddcafffff4867f",
+      "title": "Luxury Villa in Mumbai",
+      "propertyType": "residential",
+      "listingType": "sale",
+      "price": 50000000
+    },
+    "customerId": {
+      "_id": "6989aa0ddeddcafffff48699",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "listingType": "offer",
+    "status": "pending",
+    "documents": [
+      {
+        "name": "id-proof.pdf",
+        "url": "https://s3.amazonaws.com/bucket-name/patil-associate/property-documents/uuid-timestamp-id-proof.pdf",
+        "type": "application/pdf"
+      },
+      {
+        "name": "income-certificate.docx",
+        "url": "https://s3.amazonaws.com/bucket-name/patil-associate/property-documents/uuid-timestamp-income-certificate.docx",
+        "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      }
+    ],
+    "createdAt": "2026-02-09T09:48:53.939Z",
+    "updatedAt": "2026-02-09T10:15:22.123Z"
+  }
+}
+```
+
+### Delete Document from Property Listing
+**DELETE** `/api/property-listings/:listingId/documents/:documentIndex`
+
+**Authentication:** Required (Listing owner, agent, or admin)
+
+**Description:** Delete a specific document from a property listing. The document is also removed from S3 storage.
+
+**Request:**
+```bash
+curl -X DELETE http://localhost:3000/api/property-listings/6989ad85dc846bc552f87a4f/documents/0 \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Document deleted successfully",
+  "data": {
+    "_id": "6989ad85dc846bc552f87a4f",
+    "propertyId": {
+      "_id": "6989a410deddcafffff4867f",
+      "title": "Luxury Villa in Mumbai"
+    },
+    "customerId": {
+      "_id": "6989aa0ddeddcafffff48699",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "listingType": "offer",
+    "status": "pending",
+    "documents": [], // Document removed from array
+    "createdAt": "2026-02-09T09:48:53.939Z",
+    "updatedAt": "2026-02-09T10:20:45.456Z"
+  }
+}
+```
+
+### Get Listing Statistics
+**GET** `/api/property-listings/stats`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Listing statistics retrieved successfully",
+  "data": {
+    "totalListings": 200,
+    "pendingListings": 75,
+    "acceptedListings": 80,
+    "completedListings": 30,
+    "cancelledListings": 15,
+    "typeStats": [
+      {
+        "_id": "inquiry",
+        "count": 120
+      },
+      {
+        "_id": "offer",
+        "count": 50
+      },
+      {
+        "_id": "booking",
+        "count": 30
+      }
+    ],
+    "recentListings": 45
+  }
+}
+```
+
 ## Error Handling
 
 All API responses follow a consistent format:
