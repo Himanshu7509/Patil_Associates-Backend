@@ -10,6 +10,7 @@ import hotelRoomRoutes from './src/routes/hotelRoom.route.js';
 import hotelBookingRoutes from './src/routes/hotelBooking.route.js';
 import propertyRoutes from './src/routes/property.route.js';
 import propertyListingRoutes from './src/routes/propertyListing.route.js';
+import userRoutes from './src/routes/admin/user.route.js';
 
 dotenv.config();
 const app = express();
@@ -50,6 +51,7 @@ dbConnect();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/menu', menuRoutes);
