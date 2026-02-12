@@ -91,6 +91,33 @@ Authenticate user and receive JWT token
 
 ### 2. Restaurant Booking Routes `/api/restaurant`
 
+The restaurant booking system allows customers to browse menu items and book tables either with or without creating an account. Customers can place orders and book tables seamlessly without requiring authentication, though registered users have additional features like viewing their booking history.
+
+#### Get All Menu Items (Public)
+Browse all available menu items before placing an order
+
+**GET** `/api/menu/`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Menu items retrieved successfully",
+  "data": [
+    {
+      "_id": "60f7b1b1c9e8f10015d1b1a1",
+      "name": "Paneer Tikka",
+      "description": "Grilled cottage cheese with spices",
+      "price": 250,
+      "category": "appetizer",
+      "dietaryOptions": ["vegetarian"],
+      "isActive": true,
+      "image": "https://example.com/paneer-tikka.jpg"
+    }
+  ]
+}
+```
+
 #### Get Bookings by Date Range (Public)
 Retrieve restaurant bookings within a specific date range
 
@@ -171,10 +198,39 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-#### Create Booking (Authenticated)
-Create a new restaurant booking
+#### Create Booking (Public/Authenticated)
+Create a new restaurant booking. This endpoint supports both authenticated users (who can use their account details) and unauthenticated users (guests).
 
 **POST** `/api/restaurant/`
+
+**For Unauthenticated Users (Guests):**
+Create a booking without an account by providing customer details.
+
+**Request Body:**
+```json
+{
+  "partySize": 4,
+  "bookingDate": "2024-01-15",
+  "bookingTime": "19:30",
+  "specialRequests": "Window seat preferred",
+  "tableNumber": "12",
+  "bookingType": "table",
+  "customerName": "John Doe",
+  "customerEmail": "john@example.com",
+  "customerPhone": "+919876543210",
+  "orderDetails": [
+    {
+      "itemId": "60f7b1b1c9e8f10015d1b1a1",
+      "quantity": 2,
+      "price": 250
+    }
+  ],
+  "totalAmount": 500
+}
+```
+
+**For Authenticated Users:**
+Create a booking using account details. Customer information will be auto-populated from the user's account if not provided.
 
 **Headers:**
 ```
@@ -188,7 +244,17 @@ Authorization: Bearer <jwt-token>
   "bookingDate": "2024-01-15",
   "bookingTime": "19:30",
   "specialRequests": "Window seat preferred",
-  "bookingType": "table"
+  "tableNumber": "12",
+  "bookingType": "table",
+  "orderDetails": [
+    {
+      "itemId": "60f7b1b1c9e8f10015d1b1a1",
+      "quantity": 2,
+      "price": 250
+    }
+  ],
+  "totalAmount": 500
+  // customerName, customerEmail, customerPhone will be auto-populated from account
 }
 ```
 
@@ -199,12 +265,50 @@ Authorization: Bearer <jwt-token>
   "message": "Booking created successfully",
   "data": {
     "_id": "60f7b1b1c9e8f10015d1b1a1",
-    "customerId": "60f7b1b1c9e8f10015d1b1a1",
+    "customerId": {
+      "_id": "user_id",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+919876543210",
     "partySize": 4,
     "bookingDate": "2024-01-15T00:00:00.000Z",
     "bookingTime": "19:30",
+    "specialRequests": "Window seat preferred",
+    "tableNumber": "12",
     "status": "pending",
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "bookingType": "table",
+    "orderDetails": [
+      {
+        "itemId": "60f7b1b1c9e8f10015d1b1a1",
+        "itemName": "Paneer Tikka",
+        "quantity": 2,
+        "price": 250,
+        "description": "Grilled cottage cheese with spices",
+        "category": "appetizer",
+        "ingredients": ["paneer", "spices", "herbs"],
+        "dietaryOptions": ["vegetarian"],
+        "image": "https://example.com/paneer-tikka.jpg",
+        "cookingTime": 25
+      }
+    ],
+    "totalAmount": 500,
+    "tableDetails": [
+      {
+        "tableId": "table_id",
+        "tableNumber": "12",
+        "capacity": 6,
+        "location": "indoor",
+        "shape": "round",
+        "features": ["window_view", "quiet_corner"],
+        "isActive": true,
+        "notes": "VIP table near window"
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -995,6 +1099,9 @@ Authorization: Bearer <jwt-token>
 {
   "_id": "ObjectId",
   "customerId": "ObjectId (ref: User)",
+  "customerName": "String",
+  "customerEmail": "String",
+  "customerPhone": "String",
   "partySize": "Number",
   "bookingDate": "Date",
   "bookingTime": "String (HH:MM)",
@@ -1002,6 +1109,33 @@ Authorization: Bearer <jwt-token>
   "tableNumber": "String",
   "status": "pending|confirmed|cancelled|completed",
   "bookingType": "table|event|private_dining|regular",
+  "orderDetails": [
+    {
+      "itemId": "ObjectId (ref: MenuItem)",
+      "itemName": "String",
+      "quantity": "Number",
+      "price": "Number",
+      "description": "String",
+      "category": "String",
+      "ingredients": ["String"],
+      "dietaryOptions": ["String"],
+      "image": "String (URL)",
+      "cookingTime": "Number (minutes)"
+    }
+  ],
+  "tableDetails": [
+    {
+      "tableId": "ObjectId (ref: Table)",
+      "tableNumber": "String",
+      "capacity": "Number",
+      "location": "String",
+      "shape": "String",
+      "features": ["String"],
+      "isActive": "Boolean",
+      "notes": "String"
+    }
+  ],
+  "totalAmount": "Number",
   "notes": "String",
   "createdAt": "Date",
   "updatedAt": "Date"
@@ -1219,4 +1353,4 @@ For API support and questions, contact:
 
 ---
 
-*Last Updated: February 11, 2026*
+*Last Updated: February 12, 2026*

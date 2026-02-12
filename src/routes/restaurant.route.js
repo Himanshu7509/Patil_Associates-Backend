@@ -20,13 +20,16 @@ router.route('/date-range')
 router.route('/available-tables')
   .get(getAvailableTables); // Check available tables
 
+// Public route for creating bookings without authentication
+router.route('/')
+  .post(createBooking); // Allow unauthenticated users to create bookings
+
 // Protected routes (require authentication)
 router.use(protect);
 
-// All booking routes now require authentication
+// Authenticated user routes
 router.route('/')
-  .get(getAllBookings)  // Authenticated users see their bookings
-  .post(createBooking); // Only authenticated users can create bookings
+  .get(getAllBookings);  // Authenticated users see their bookings
 
 // Specific booking routes
 router.route('/:id')

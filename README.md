@@ -89,9 +89,11 @@ Admin routes require the user to have 'admin' role.
 ### Create Booking
 **POST** `/api/restaurant/`
 
-**Authentication:** Required
+**Authentication:** Optional (Public access for guest bookings, Authenticated for registered users)
 
-**Request Body:**
+**Description:** Creates a new restaurant booking. Supports both authenticated users and guest bookings without registration. When booking as a guest, provide customerName, customerEmail, and/or customerPhone. When booking as an authenticated user, the customer details are automatically populated from the user profile.
+
+**Request Body (Authenticated User):**
 ```json
 {
   "partySize": 4,
@@ -100,7 +102,39 @@ Admin routes require the user to have 'admin' role.
   "specialRequests": "Window seat preferred",
   "tableNumber": "12",
   "bookingType": "table",
-  "notes": "Celebrating anniversary"
+  "notes": "Celebrating anniversary",
+  "orderDetails": [
+    {
+      "itemId": "menu_item_id",
+      "quantity": 2,
+      "price": 24.99
+    }
+  ],
+  "totalAmount": 49.98
+}
+```
+
+**Request Body (Guest User):**
+```json
+{
+  "partySize": 4,
+  "bookingDate": "2026-02-15",
+  "bookingTime": "19:30",
+  "specialRequests": "Window seat preferred",
+  "tableNumber": "12",
+  "bookingType": "table",
+  "notes": "Celebrating anniversary",
+  "customerName": "John Doe",
+  "customerEmail": "john@example.com",
+  "customerPhone": "+1234567890",
+  "orderDetails": [
+    {
+      "itemId": "menu_item_id",
+      "quantity": 2,
+      "price": 24.99
+    }
+  ],
+  "totalAmount": 49.98
 }
 ```
 
@@ -116,6 +150,9 @@ Admin routes require the user to have 'admin' role.
       "fullName": "John Doe",
       "email": "john@example.com"
     },
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+1234567890",
     "partySize": 4,
     "bookingDate": "2026-02-15T00:00:00.000Z",
     "bookingTime": "19:30",
@@ -124,6 +161,33 @@ Admin routes require the user to have 'admin' role.
     "status": "pending",
     "bookingType": "table",
     "notes": "Celebrating anniversary",
+    "orderDetails": [
+      {
+        "itemId": "menu_item_id",
+        "itemName": "Grilled Salmon",
+        "quantity": 2,
+        "price": 24.99,
+        "description": "Fresh Atlantic salmon with lemon herb butter",
+        "category": "main_course",
+        "ingredients": ["salmon", "lemon", "herbs", "butter"],
+        "dietaryOptions": ["gluten_free"],
+        "image": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg",
+        "cookingTime": 15
+      }
+    ],
+    "totalAmount": 49.98,
+    "tableDetails": [
+      {
+        "tableId": "table_id",
+        "tableNumber": "12",
+        "capacity": 6,
+        "location": "indoor",
+        "shape": "round",
+        "features": ["window_view", "quiet_corner"],
+        "isActive": true,
+        "notes": "VIP table near window"
+      }
+    ],
     "createdAt": "2026-02-07T10:30:00.000Z",
     "updatedAt": "2026-02-07T10:30:00.000Z"
   }
@@ -152,11 +216,41 @@ Admin routes require the user to have 'admin' role.
         "fullName": "John Doe",
         "email": "john@example.com"
       },
+      "customerName": "John Doe",
+      "customerEmail": "john@example.com",
+      "customerPhone": "+1234567890",
       "partySize": 4,
       "bookingDate": "2026-02-15T00:00:00.000Z",
       "bookingTime": "19:30",
       "status": "confirmed",
-      "bookingType": "table"
+      "bookingType": "table",
+      "orderDetails": [
+        {
+          "itemId": "menu_item_id",
+          "itemName": "Grilled Salmon",
+          "quantity": 2,
+          "price": 24.99,
+          "description": "Fresh Atlantic salmon with lemon herb butter",
+          "category": "main_course",
+          "ingredients": ["salmon", "lemon", "herbs", "butter"],
+          "dietaryOptions": ["gluten_free"],
+          "image": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg",
+          "cookingTime": 15
+        }
+      ],
+      "totalAmount": 49.98,
+      "tableDetails": [
+        {
+          "tableId": "table_id",
+          "tableNumber": "12",
+          "capacity": 6,
+          "location": "indoor",
+          "shape": "round",
+          "features": ["window_view", "quiet_corner"],
+          "isActive": true,
+          "notes": "VIP table near window"
+        }
+      ]
     }
   ],
   "count": 1
@@ -180,11 +274,41 @@ Admin routes require the user to have 'admin' role.
       "fullName": "John Doe",
       "email": "john@example.com"
     },
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+1234567890",
     "partySize": 4,
     "bookingDate": "2026-02-15T00:00:00.000Z",
     "bookingTime": "19:30",
     "status": "confirmed",
-    "bookingType": "table"
+    "bookingType": "table",
+    "orderDetails": [
+      {
+        "itemId": "menu_item_id",
+        "itemName": "Grilled Salmon",
+        "quantity": 2,
+        "price": 24.99,
+        "description": "Fresh Atlantic salmon with lemon herb butter",
+        "category": "main_course",
+        "ingredients": ["salmon", "lemon", "herbs", "butter"],
+        "dietaryOptions": ["gluten_free"],
+        "image": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg",
+        "cookingTime": 15
+      }
+    ],
+    "totalAmount": 49.98,
+    "tableDetails": [
+      {
+        "tableId": "table_id",
+        "tableNumber": "12",
+        "capacity": 6,
+        "location": "indoor",
+        "shape": "round",
+        "features": ["window_view", "quiet_corner"],
+        "isActive": true,
+        "notes": "VIP table near window"
+      }
+    ]
   }
 }
 ```
@@ -226,10 +350,40 @@ Admin routes require the user to have 'admin' role.
         "fullName": "John Doe",
         "email": "john@example.com"
       },
+      "customerName": "John Doe",
+      "customerEmail": "john@example.com",
+      "customerPhone": "+1234567890",
       "partySize": 4,
       "bookingDate": "2026-02-15T00:00:00.000Z",
       "bookingTime": "19:30",
-      "status": "confirmed"
+      "status": "confirmed",
+      "orderDetails": [
+        {
+          "itemId": "menu_item_id",
+          "itemName": "Grilled Salmon",
+          "quantity": 2,
+          "price": 24.99,
+          "description": "Fresh Atlantic salmon with lemon herb butter",
+          "category": "main_course",
+          "ingredients": ["salmon", "lemon", "herbs", "butter"],
+          "dietaryOptions": ["gluten_free"],
+          "image": "https://s3.amazonaws.com/bucket-name/patil-associate/menu-items/unique-filename.jpg",
+          "cookingTime": 15
+        }
+      ],
+      "totalAmount": 49.98,
+      "tableDetails": [
+        {
+          "tableId": "table_id",
+          "tableNumber": "12",
+          "capacity": 6,
+          "location": "indoor",
+          "shape": "round",
+          "features": ["window_view", "quiet_corner"],
+          "isActive": true,
+          "notes": "VIP table near window"
+        }
+      ]
     }
   ],
   "count": 1
