@@ -325,15 +325,6 @@ export const updateBooking = async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const booking = await RestaurantBooking.findById(id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
     // Check if user is admin
     const isAdmin = req.user?.roles?.includes('admin');
     
@@ -344,11 +335,33 @@ export const updateBooking = async (req, res) => {
       });
     }
 
+    // Validate the booking exists before updating
+    const existingBooking = await RestaurantBooking.findById(id);
+    if (!existingBooking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Update the booking
     const updatedBooking = await RestaurantBooking.findByIdAndUpdate(
       id,
       updateData,
-      { new: true, runValidators: true }
-    );
+      { 
+        new: true, 
+        runValidators: true,
+        // Use lean() to avoid potential Mongoose document issues
+        lean: false
+      }
+    ).populate('customerId', 'fullName email phoneNo');
+
+    if (!updatedBooking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found after update'
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -358,6 +371,14 @@ export const updateBooking = async (req, res) => {
 
   } catch (error) {
     console.error('Update booking error:', error);
+    // Check if it's a validation error
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: error.message
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Error updating booking',

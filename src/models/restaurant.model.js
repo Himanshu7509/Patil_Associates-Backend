@@ -55,7 +55,7 @@ const restaurantBookingSchema = new mongoose.Schema({
   status: {
     type: String,
     required: false,
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+    enum: ['pending', 'confirmed', 'cancelled', 'completed', 'checked_in', 'checked_out', 'no_show'],
     default: 'pending'
   },
   bookingType: {
