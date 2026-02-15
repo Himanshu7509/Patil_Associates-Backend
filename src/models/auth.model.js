@@ -33,7 +33,46 @@ const userSchema = new mongoose.Schema({
     type: [String],
     required: true,
     default: ["customer"],
-    enum: ["customer", "admin"]
+    enum: ["customer", "admin", "agent"]
+  },
+  profilePicture: {
+    type: String, // URL to the profile picture stored in S3
+    required: false
+  },
+  documents: [{
+    name: String,
+    url: String, // URL to the document stored in S3
+    type: String, // Type of document
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String,
+    country: String
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other']
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt fields

@@ -12,6 +12,7 @@ import propertyRoutes from './src/routes/property.route.js';
 import propertyListingRoutes from './src/routes/propertyListing.route.js';
 import billingRoutes from './src/routes/billing.route.js';
 import userRoutes from './src/routes/admin/user.route.js';
+import profileRoutes from './src/routes/profile.route.js';
 
 dotenv.config();
 const app = express();
@@ -53,6 +54,7 @@ dbConnect();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/menu', menuRoutes);

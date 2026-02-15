@@ -1,10 +1,11 @@
 # Patil Associate Backend API
 
-A comprehensive backend system for Patil Associate's restaurant and bar management, with future support for hotel and properties.
+A comprehensive backend system for Patil Associate's restaurant and bar management, with support for hotel and properties. Includes customer profile management with profile pictures and document uploads for hotel and property bookings.
 
 ## Table of Contents
 - [API Overview](#api-overview)
 - [Authentication](#authentication)
+- [Profile APIs](#profile-apis)
 - [Restaurant & Bar APIs](#restaurant--bar-apis)
 - [Table Management APIs](#table-management-apis)
 - [Menu Management APIs](#menu-management-apis)
@@ -23,10 +24,125 @@ Authorization: Bearer <your-jwt-token>
 
 Admin routes require the user to have 'admin' role.
 
+### Customer Profile Management
+We have introduced customer profile management with support for profile pictures and document uploads, particularly important for hotel and property bookings. Customers can upload profile pictures and various documents (IDs, contracts, etc.) which are stored securely in AWS S3.
+
 ## Authentication APIs
 
 ### Signup
 **POST** `/api/auth/signup`
+
+### Login
+**POST** `/api/auth/login`
+
+## Profile APIs
+
+### Get User Profile
+**GET** `/api/profile`
+
+Get the authenticated user's profile information.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User profile retrieved successfully",
+  "data": {
+    "_id": "user_id",
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "phoneNo": "+1234567890",
+    "roles": ["customer"],
+    "profilePicture": "https://s3.amazonaws.com/bucket/profile-pictures/12345_image.jpg",
+    "documents": [
+      {
+        "name": "passport.pdf",
+        "url": "https://s3.amazonaws.com/bucket/documents/12345_passport.pdf",
+        "type": "application/pdf",
+        "uploadedAt": "2023-01-01T00:00:00.000Z"
+      }
+    ],
+    "address": {
+      "street": "123 Main St",
+      "city": "City",
+      "state": "State",
+      "zipCode": "12345",
+      "country": "Country"
+    },
+    "dateOfBirth": "1990-01-01T00:00:00.000Z",
+    "gender": "male",
+    "isActive": true,
+    "isEmailVerified": false,
+    "isPhoneVerified": false,
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Update User Profile
+**PUT** `/api/profile`
+
+Update the authenticated user's profile information.
+
+**Request Body:**
+```json
+{
+  "fullName": "John Doe",
+  "phoneNo": "+1234567890",
+  "address": {
+    "street": "123 Main St",
+    "city": "City",
+    "state": "State",
+    "zipCode": "12345",
+    "country": "Country"
+  },
+  "dateOfBirth": "1990-01-01T00:00:00.000Z",
+  "gender": "male"
+}
+```
+
+### Upload Profile Picture
+**POST** `/api/profile/picture`
+
+Upload a profile picture for the authenticated user. Supports JPEG, JPG, and PNG files up to 5MB.
+
+**Form Data:**
+- `profilePicture`: Image file
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile picture uploaded successfully",
+  "data": {
+    "profilePicture": "https://s3.amazonaws.com/bucket/profile-pictures/12345_image.jpg"
+  }
+}
+```
+
+### Upload Document
+**POST** `/api/profile/document`
+
+Upload a document for the authenticated user. Supports images, PDFs, and Word documents up to 10MB.
+
+**Form Data:**
+- `document`: Document file
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Document uploaded successfully",
+  "data": {
+    "document": {
+      "name": "passport.pdf",
+      "url": "https://s3.amazonaws.com/bucket/documents/12345_passport.pdf",
+      "type": "application/pdf"
+    }
+  }
+}
+```
 
 **Request Body:**
 ```json

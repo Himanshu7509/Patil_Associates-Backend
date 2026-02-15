@@ -2,6 +2,7 @@
 import User from '../models/auth.model.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { uploadToS3, deleteFromS3 } from '../utils/upload.js';
 
 // Generate JWT Token
 const generateToken = (userId, roles) => {
@@ -150,6 +151,28 @@ export const updateUser = async (req, res) => {
     if (phoneNo) updateData.phoneNo = phoneNo;
     if (roles) updateData.roles = roles;
     
+    // Handle profile picture update separately to avoid conflicts
+    if (req.body.profilePicture !== undefined) {
+      updateData.profilePicture = req.body.profilePicture;
+    }
+    
+    // Handle documents update separately
+    if (req.body.documents !== undefined) {
+      updateData.documents = req.body.documents;
+    }
+    
+    // Handle address update separately
+    if (req.body.address !== undefined) {
+      updateData.address = req.body.address;
+    }
+    
+    // Handle additional profile fields
+    if (req.body.dateOfBirth !== undefined) updateData.dateOfBirth = req.body.dateOfBirth;
+    if (req.body.gender !== undefined) updateData.gender = req.body.gender;
+    if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
+    if (req.body.isEmailVerified !== undefined) updateData.isEmailVerified = req.body.isEmailVerified;
+    if (req.body.isPhoneVerified !== undefined) updateData.isPhoneVerified = req.body.isPhoneVerified;
+    
     // Update the user
     const updatedUser = await User.findByIdAndUpdate(
       id,
@@ -167,6 +190,206 @@ export const updateUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error updating user',
+      error: error.message
+    });
+  }
+};
+
+// Upload profile picture
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const file = req.file;
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file type. Only JPEG, JPG, and PNG are allowed.'
+      });
+    }
+
+    // Limit file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: 'File size exceeds 5MB limit.'
+      });
+    }
+
+    // Upload to S3
+    const imageUrl = await uploadToS3(file.buffer, file.originalname, file.mimetype, 'profile-pictures');
+    
+    // Update user with profile picture URL
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Delete old profile picture if exists
+    if (user.profilePicture) {
+      await deleteFromS3(user.profilePicture);
+    }
+
+    user.profilePicture = imageUrl;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile picture uploaded successfully',
+      data: { profilePicture: imageUrl }
+    });
+  } catch (error) {
+    console.error('Upload profile picture error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading profile picture',
+      error: error.message
+    });
+  }
+};
+
+// Upload document
+export const uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const file = req.file;
+    
+    // Validate file type (allow images and PDFs)
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/jpg', 'application/pdf',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file type. Only images, PDFs, and Word documents are allowed.'
+      });
+    }
+
+    // Limit file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: 'File size exceeds 10MB limit.'
+      });
+    }
+
+    // Upload to S3
+    const documentUrl = await uploadToS3(file.buffer, file.originalname, file.mimetype, 'user-documents');
+    
+    // Update user with document info
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Add document to user's documents array
+    const documentInfo = {
+      name: file.originalname,
+      url: documentUrl,
+      type: file.mimetype
+    };
+    
+    user.documents.push(documentInfo);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Document uploaded successfully',
+      data: { document: documentInfo }
+    });
+  } catch (error) {
+    console.error('Upload document error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading document',
+      error: error.message
+    });
+  }
+};
+
+// Get user profile
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'User profile retrieved successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving user profile',
+      error: error.message
+    });
+  }
+};
+
+// Update user profile
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { fullName, phoneNo, address, dateOfBirth, gender } = req.body;
+    
+    const updateData = {};
+    if (fullName) updateData.fullName = fullName;
+    if (phoneNo) updateData.phoneNo = phoneNo;
+    if (address) updateData.address = address;
+    if (dateOfBirth) updateData.dateOfBirth = dateOfBirth;
+    if (gender) updateData.gender = gender;
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'User profile updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Update user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user profile',
       error: error.message
     });
   }
@@ -209,6 +432,8 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
+
+
 
 // Login Controller
 export const login = async (req, res) => {
