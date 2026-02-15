@@ -452,28 +452,43 @@ export const login = async (req, res) => {
     const isAdminCredentials = (email === process.env.ADMIN_EMAIL);
     
     if (isAdminCredentials) {
-      // Check if the entered password matches the admin password from env (plaintext comparison)
-      const isCorrectAdminPassword = (password === process.env.ADMIN_PASSWORD);
+      // Check if admin user exists in database
+      let user = await User.findOne({ email }).select('+password');
       
-      if (isCorrectAdminPassword) {
-        // Check if admin user exists in database
-        let user = await User.findOne({ email });
+      if (!user) {
+        // Create admin user if it doesn't exist with the environment password
+        user = await User.create({
+          fullName: 'Admin User',
+          email: process.env.ADMIN_EMAIL,
+          password: process.env.ADMIN_PASSWORD, // This will be hashed by the pre-save hook
+          phoneNo: '0000000000',
+          roles: ['admin']
+        });
         
-        if (!user) {
-          // Create admin user if it doesn't exist
-          user = await User.create({
-            fullName: 'Admin User',
-            email: process.env.ADMIN_EMAIL,
-            password: process.env.ADMIN_PASSWORD,
-            phoneNo: '0000000000',
-            roles: ['admin']
+        // Admin login successful
+        const token = generateToken(user._id, user.roles);
+        user.password = undefined;
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Admin user created and login successful',
+          token,
+          user
+        });
+      } else {
+        // Admin user exists, verify the password using bcrypt
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+          return res.status(401).json({
+            success: false,
+            message: 'Invalid admin credentials'
           });
-        } else {
-          // Ensure existing user has admin role
-          if (!user.roles.includes('admin')) {
-            user.roles = ['admin'];
-            await user.save();
-          }
+        }
+        
+        // Ensure admin user has admin role
+        if (!user.roles.includes('admin')) {
+          user.roles = ['admin'];
+          await user.save();
         }
         
         // Admin login successful
@@ -485,11 +500,6 @@ export const login = async (req, res) => {
           message: 'Admin login successful',
           token,
           user
-        });
-      } else {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid admin credentials'
         });
       }
     }
