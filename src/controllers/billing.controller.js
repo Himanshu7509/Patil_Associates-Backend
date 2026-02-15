@@ -74,7 +74,6 @@ export const createOrderFromBooking = async (req, res) => {
     // Create order
     const orderData = {
       bookingId,
-      customerId: booking.customerId || null,
       customerName: booking.customerName || booking.customerId?.fullName || 'Guest Customer',
       customerEmail: booking.customerEmail || booking.customerId?.email || '',
       customerPhone: booking.customerPhone || booking.customerId?.phoneNo || '',
@@ -86,6 +85,11 @@ export const createOrderFromBooking = async (req, res) => {
       billNotes,
       createdBy: req.user?._id || new mongoose.Types.ObjectId()
     };
+    
+    // Only include customerId if it exists (for registered users)
+    if (booking.customerId) {
+      orderData.customerId = booking.customerId;
+    }
     
     console.log('Order data to be created:', orderData);
     
