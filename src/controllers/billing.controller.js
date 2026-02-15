@@ -3,16 +3,27 @@ import Order from '../models/order.model.js';
 import RestaurantBooking from '../models/restaurant.model.js';
 import MenuItem from '../models/menu.model.js';
 import User from '../models/auth.model.js';
+import mongoose from 'mongoose';
 
 // Create a new order from booking
 export const createOrderFromBooking = async (req, res) => {
   try {
+    console.log('Create order from booking called');
+    console.log('Request body:', req.body);
+    console.log('User from token:', req.user);
+    
     const { bookingId, gstPercentage = 18, discountPercentage = 0, billNotes } = req.body;
+    
+    console.log('Booking ID:', bookingId);
+    console.log('GST Percentage:', gstPercentage);
+    console.log('Discount Percentage:', discountPercentage);
     
     // Check if booking exists
     const booking = await RestaurantBooking.findById(bookingId)
       .populate('customerId', 'fullName email phoneNo')
       .populate('orderDetails.itemId');
+    
+    console.log('Booking found:', booking ? 'Yes' : 'No');
     
     if (!booking) {
       return res.status(404).json({
@@ -34,24 +45,36 @@ export const createOrderFromBooking = async (req, res) => {
     if (!booking.orderDetails || booking.orderDetails.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Booking does not contain order details'
+        message: 'Booking does not contain order details. Only bookings with menu items can be converted to orders.'
       });
     }
     
+    console.log('Booking order details:', booking.orderDetails);
+    
     // Prepare order items
     const orderItems = booking.orderDetails.map(item => ({
-      itemId: item.itemId?._id || item.itemId,
-      itemName: item.itemName || item.itemId?.name,
+      itemId: item.itemId?._id || item.itemId || null,
+      itemName: item.itemName || item.itemId?.name || 'Unknown Item',
       quantity: item.quantity || 1,
       unitPrice: item.price || item.itemId?.price || 0,
-      category: item.category || item.itemId?.category,
+      category: item.category || item.itemId?.category || 'main_course',
       dietaryOptions: item.dietaryOptions || item.itemId?.dietaryOptions || []
-    }));
+    })).filter(item => item.itemId && item.itemName && item.unitPrice > 0);
+    
+    console.log('Prepared order items:', orderItems);
+    
+    // Validate that we have at least one valid order item
+    if (orderItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid order items found in booking'
+      });
+    }
     
     // Create order
     const orderData = {
       bookingId,
-      customerId: booking.customerId?._id || null,
+      customerId: booking.customerId || null,
       customerName: booking.customerName || booking.customerId?.fullName || 'Guest Customer',
       customerEmail: booking.customerEmail || booking.customerId?.email || '',
       customerPhone: booking.customerPhone || booking.customerId?.phoneNo || '',
@@ -61,17 +84,23 @@ export const createOrderFromBooking = async (req, res) => {
       gstPercentage,
       discountPercentage,
       billNotes,
-      createdBy: req.user._id
+      createdBy: req.user?._id || new mongoose.Types.ObjectId()
     };
+    
+    console.log('Order data to be created:', orderData);
     
     const newOrder = new Order(orderData);
     await newOrder.save();
+    
+    console.log('Order saved successfully');
     
     // Populate the created order
     const populatedOrder = await Order.findById(newOrder._id)
       .populate('customerId', 'fullName email phoneNo')
       .populate('createdBy', 'fullName email')
       .populate('orderItems.itemId');
+    
+    console.log('Order populated successfully');
     
     res.status(201).json({
       success: true,
@@ -81,6 +110,7 @@ export const createOrderFromBooking = async (req, res) => {
     
   } catch (error) {
     console.error('Create order error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Error creating order',

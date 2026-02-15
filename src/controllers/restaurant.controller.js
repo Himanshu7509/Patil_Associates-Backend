@@ -124,7 +124,7 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// Get all restaurant bookings
+// Get all restaurant bookings with pagination
 export const getAllBookings = async (req, res) => {
   try {
     console.log('getAllBookings called');
@@ -151,9 +151,21 @@ export const getAllBookings = async (req, res) => {
       }
     }
 
+    // Get pagination parameters
+    const { page = 1, limit = 12 } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const totalItems = await RestaurantBooking.countDocuments(query);
+    
+    // Get paginated results
     const bookings = await RestaurantBooking.find(query)
       .populate('customerId', 'fullName email phoneNo')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
     // Populate order details with full MenuItem information for each booking
     const { default: MenuItem } = await import('./../models/menu.model.js');
@@ -211,6 +223,14 @@ export const getAllBookings = async (req, res) => {
       success: true,
       message: 'Bookings retrieved successfully',
       data: bookings,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalItems / limitNum),
+        totalItems,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(totalItems / limitNum),
+        hasPrevPage: pageNum > 1
+      },
       count: bookings.length
     });
 

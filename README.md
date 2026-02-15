@@ -410,6 +410,280 @@ Admin routes require the user to have 'admin' role.
 }
 ```
 
+## Billing & Order Management APIs
+
+### Create Order from Booking
+**POST** `/api/billing/create-from-booking`
+
+**Authentication:** Required (Admin only)
+
+**Description:** Converts a restaurant booking into a billable order with GST calculation and payment tracking.
+
+**Request Body:**
+```json
+{
+  "bookingId": "booking_id",
+  "gstPercentage": 18,
+  "discountPercentage": 0,
+  "billNotes": "Special anniversary celebration"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Order created successfully",
+  "data": {
+    "_id": "order_id",
+    "billNumber": "BILL-20260213-0001",
+    "bookingId": "booking_id",
+    "customerId": {
+      "_id": "user_id",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+1234567890",
+    "orderItems": [
+      {
+        "itemId": "menu_item_id",
+        "itemName": "Grilled Salmon",
+        "quantity": 2,
+        "unitPrice": 24.99,
+        "totalPrice": 49.98,
+        "category": "main_course",
+        "dietaryOptions": ["gluten_free"]
+      }
+    ],
+    "tableNumber": "12",
+    "partySize": 4,
+    "subtotal": 49.98,
+    "gstPercentage": 18,
+    "gstAmount": 8.99,
+    "discountPercentage": 0,
+    "discountAmount": 0,
+    "totalAmount": 58.97,
+    "paymentStatus": "pending",
+    "billNotes": "Special anniversary celebration",
+    "createdBy": {
+      "_id": "admin_id",
+      "fullName": "Admin User",
+      "email": "admin@example.com"
+    },
+    "billDate": "2026-02-13T10:30:00.000Z",
+    "createdAt": "2026-02-13T10:30:00.000Z",
+    "updatedAt": "2026-02-13T10:30:00.000Z"
+  }
+}
+```
+
+### Get All Orders
+**GET** `/api/billing/`
+
+**Authentication:** Required (Admin only)
+
+**Query Parameters:**
+- `page` (number): Page number (default: 1)
+- `limit` (number): Items per page (default: 12)
+- `paymentStatus` (string): Filter by payment status
+- `customerName` (string): Search by customer name
+- `billNumber` (string): Search by bill number
+- `startDate` (string): Filter by date range start
+- `endDate` (string): Filter by date range end
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Orders retrieved successfully",
+  "data": [
+    {
+      "_id": "order_id",
+      "billNumber": "BILL-20260213-0001",
+      "customerName": "John Doe",
+      "totalAmount": 58.97,
+      "paymentStatus": "pending",
+      "billDate": "2026-02-13T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalItems": 50,
+    "itemsPerPage": 12,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  },
+  "count": 12
+}
+```
+
+### Get Order by ID
+**GET** `/api/billing/:id`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Order retrieved successfully",
+  "data": {
+    "_id": "order_id",
+    "billNumber": "BILL-20260213-0001",
+    "bookingId": "booking_id",
+    "customerId": {
+      "_id": "user_id",
+      "fullName": "John Doe",
+      "email": "john@example.com"
+    },
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+1234567890",
+    "orderItems": [
+      {
+        "itemId": "menu_item_id",
+        "itemName": "Grilled Salmon",
+        "quantity": 2,
+        "unitPrice": 24.99,
+        "totalPrice": 49.98,
+        "category": "main_course",
+        "dietaryOptions": ["gluten_free"]
+      }
+    ],
+    "tableNumber": "12",
+    "partySize": 4,
+    "subtotal": 49.98,
+    "gstPercentage": 18,
+    "gstAmount": 8.99,
+    "discountPercentage": 0,
+    "discountAmount": 0,
+    "totalAmount": 58.97,
+    "paymentStatus": "pending",
+    "paymentMethod": null,
+    "paymentReference": null,
+    "billNotes": "Special anniversary celebration",
+    "createdBy": {
+      "_id": "admin_id",
+      "fullName": "Admin User",
+      "email": "admin@example.com"
+    },
+    "billDate": "2026-02-13T10:30:00.000Z",
+    "createdAt": "2026-02-13T10:30:00.000Z",
+    "updatedAt": "2026-02-13T10:30:00.000Z"
+  }
+}
+```
+
+### Update Order
+**PUT** `/api/billing/:id`
+
+**Authentication:** Required (Admin only)
+
+**Request Body (for payment status update):**
+```json
+{
+  "paymentStatus": "paid",
+  "paymentMethod": "card",
+  "paymentReference": "TXN123456789"
+}
+```
+
+**Request Body (for general updates):**
+```json
+{
+  "gstPercentage": 12,
+  "discountPercentage": 5,
+  "billNotes": "Updated notes"
+}
+```
+
+### Delete Order
+**DELETE** `/api/billing/:id`
+
+**Authentication:** Required (Admin only)
+
+### Get Order Statistics
+**GET** `/api/billing/stats`
+
+**Authentication:** Required (Admin only)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Order statistics retrieved successfully",
+  "data": {
+    "totalOrders": 150,
+    "totalRevenue": 8950.75,
+    "pendingPayments": 25,
+    "paidOrders": 120,
+    "cancelledOrders": 5,
+    "paymentStatusStats": [
+      {
+        "_id": "paid",
+        "count": 120,
+        "totalAmount": 7160.60
+      },
+      {
+        "_id": "pending",
+        "count": 25,
+        "totalAmount": 1487.25
+      }
+    ],
+    "recentOrders": 45
+  }
+}
+```
+
+### Generate Bill (Printable)
+**GET** `/api/billing/:id/bill`
+
+**Authentication:** Required (Admin only)
+
+**Description:** Generates a printable bill with professional formatting including company details, customer information, itemized breakdown, and totals.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Bill generated successfully",
+  "data": {
+    "billNumber": "BILL-20260213-0001",
+    "billDate": "February 13, 2026",
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "customerPhone": "+1234567890",
+    "tableNumber": "12",
+    "partySize": 4,
+    "items": [
+      {
+        "name": "Grilled Salmon",
+        "quantity": 2,
+        "unitPrice": 24.99,
+        "total": 49.98
+      }
+    ],
+    "subtotal": 49.98,
+    "gstPercentage": 18,
+    "gstAmount": 8.99,
+    "discountPercentage": 0,
+    "discountAmount": 0,
+    "totalAmount": 58.97,
+    "amountInWords": "Fifty Eight Rupees and Ninety Seven Paise Only",
+    "company": {
+      "name": "Patil Associates",
+      "address": "123 Main Street, Mumbai, Maharashtra 400001",
+      "phone": "+91 9876543210",
+      "email": "info@patilassociates.in",
+      "gst": "27AABCP1234P1Z5"
+    }
+  }
+}
+```
+
 ## Table Management APIs
 
 ### Create Table
