@@ -106,7 +106,7 @@ export const createProperty = [
   }
 ];
 
-// Get all properties
+// Get all properties with pagination
 export const getAllProperties = async (req, res) => {
   try {
     const { 
@@ -118,7 +118,9 @@ export const getAllProperties = async (req, res) => {
       minPrice, 
       maxPrice,
       bedrooms,
-      search 
+      search,
+      page = 1,
+      limit = 12
     } = req.query;
     
     let query = {};
@@ -163,14 +165,32 @@ export const getAllProperties = async (req, res) => {
       ];
     }
 
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const totalItems = await Property.countDocuments(query);
+    
+    // Get paginated results
     const properties = await Property.find(query)
       .populate('agentId', 'fullName email phoneNo')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
     res.status(200).json({
       success: true,
       message: 'Properties retrieved successfully',
       data: properties,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalItems / limitNum),
+        totalItems,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(totalItems / limitNum),
+        hasPrevPage: pageNum > 1
+      },
       count: properties.length
     });
 

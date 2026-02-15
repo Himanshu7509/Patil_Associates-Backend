@@ -109,10 +109,10 @@ export const createRoom = [
   }
 ];
 
-// Get all hotel rooms
+// Get all hotel rooms with pagination
 export const getAllRooms = async (req, res) => {
   try {
-    const { isActive, isAvailable, roomType, viewType, floor } = req.query;
+    const { isActive, isAvailable, roomType, viewType, floor, page = 1, limit = 12 } = req.query;
     
     let query = {};
     
@@ -136,12 +136,31 @@ export const getAllRooms = async (req, res) => {
       query.floor = parseInt(floor);
     }
 
-    const rooms = await HotelRoom.find(query).sort({ floor: 1, roomNumber: 1 });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const totalItems = await HotelRoom.countDocuments(query);
+    
+    // Get paginated results
+    const rooms = await HotelRoom.find(query)
+      .sort({ floor: 1, roomNumber: 1 })
+      .skip(skip)
+      .limit(limitNum);
 
     res.status(200).json({
       success: true,
       message: 'Rooms retrieved successfully',
       data: rooms,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalItems / limitNum),
+        totalItems,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(totalItems / limitNum),
+        hasPrevPage: pageNum > 1
+      },
       count: rooms.length
     });
 

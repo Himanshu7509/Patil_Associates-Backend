@@ -105,10 +105,10 @@ export const createMenuItem = [
   }
 ];
 
-// Get all menu items
+// Get all menu items with pagination
 export const getAllMenuItems = async (req, res) => {
   try {
-    const { isActive, category, dietaryOption, search } = req.query;
+    const { isActive, category, dietaryOption, search, page = 1, limit = 12 } = req.query;
     
     let query = {};
     
@@ -131,12 +131,31 @@ export const getAllMenuItems = async (req, res) => {
       ];
     }
 
-    const menuItems = await MenuItem.find(query).sort({ category: 1, name: 1 });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const totalItems = await MenuItem.countDocuments(query);
+    
+    // Get paginated results
+    const menuItems = await MenuItem.find(query)
+      .sort({ category: 1, name: 1 })
+      .skip(skip)
+      .limit(limitNum);
 
     res.status(200).json({
       success: true,
       message: 'Menu items retrieved successfully',
       data: menuItems,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalItems / limitNum),
+        totalItems,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(totalItems / limitNum),
+        hasPrevPage: pageNum > 1
+      },
       count: menuItems.length
     });
 
