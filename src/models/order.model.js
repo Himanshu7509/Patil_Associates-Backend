@@ -178,57 +178,8 @@ orderSchema.index({ customerId: 1 });
 orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ createdAt: -1 });
 
-// Pre-save middleware to generate bill number
-orderSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    // Generate bill number: BILL-YYYYMMDD-XXXX
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}${month}${day}`;
-    
-    // Find the highest bill number for today
-    const lastOrder = await this.constructor
-      .findOne({ 
-        billNumber: new RegExp(`^BILL-${dateStr}-`) 
-      })
-      .sort({ billNumber: -1 })
-      .limit(1);
-    
-    let sequence = 1;
-    if (lastOrder) {
-      const lastSequence = parseInt(lastOrder.billNumber.split('-')[2]);
-      sequence = lastSequence + 1;
-    }
-    
-    this.billNumber = `BILL-${dateStr}-${String(sequence).padStart(4, '0')}`;
-  }
-  next();
-});
-
-// Calculate totals before saving
-orderSchema.pre('save', function(next) {
-  // Calculate item totals
-  this.orderItems.forEach(item => {
-    item.totalPrice = item.quantity * item.unitPrice;
-  });
-  
-  // Calculate subtotal
-  this.subtotal = this.orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
-  
-  // Calculate discount amount
-  this.discountAmount = (this.subtotal * this.discountPercentage) / 100;
-  
-  // Calculate GST amount (on discounted amount)
-  const amountAfterDiscount = this.subtotal - this.discountAmount;
-  this.gstAmount = (amountAfterDiscount * this.gstPercentage) / 100;
-  
-  // Calculate final total
-  this.totalAmount = amountAfterDiscount + this.gstAmount;
-  
-  next();
-});
+// NOTE: All calculations are now handled in the controller to avoid validation issues
+// The pre-save middleware has been removed since we calculate values explicitly
 
 // Create and export Order model
 const Order = mongoose.model('Order', orderSchema);

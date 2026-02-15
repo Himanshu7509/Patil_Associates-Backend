@@ -52,14 +52,21 @@ export const createOrderFromBooking = async (req, res) => {
     console.log('Booking order details:', booking.orderDetails);
     
     // Prepare order items
-    const orderItems = booking.orderDetails.map(item => ({
-      itemId: item.itemId?._id || item.itemId || null,
-      itemName: item.itemName || item.itemId?.name || 'Unknown Item',
-      quantity: item.quantity || 1,
-      unitPrice: item.price || item.itemId?.price || 0,
-      category: item.category || item.itemId?.category || 'main_course',
-      dietaryOptions: item.dietaryOptions || item.itemId?.dietaryOptions || []
-    })).filter(item => item.itemId && item.itemName && item.unitPrice > 0);
+    const orderItems = booking.orderDetails.map(item => {
+      const unitPrice = item.price || item.itemId?.price || 0;
+      const quantity = item.quantity || 1;
+      const totalPrice = unitPrice * quantity;
+      
+      return {
+        itemId: item.itemId?._id || item.itemId || null,
+        itemName: item.itemName || item.itemId?.name || 'Unknown Item',
+        quantity: quantity,
+        unitPrice: unitPrice,
+        totalPrice: totalPrice,
+        category: item.category || item.itemId?.category || 'main_course',
+        dietaryOptions: item.dietaryOptions || item.itemId?.dietaryOptions || []
+      };
+    }).filter(item => item.itemId && item.itemName && item.unitPrice > 0);
     
     console.log('Prepared order items:', orderItems);
     
@@ -71,6 +78,36 @@ export const createOrderFromBooking = async (req, res) => {
       });
     }
     
+    // Calculate totals
+    const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    const discountAmount = (subtotal * discountPercentage) / 100;
+    const amountAfterDiscount = subtotal - discountAmount;
+    const gstAmount = (amountAfterDiscount * gstPercentage) / 100;
+    const totalAmount = amountAfterDiscount + gstAmount;
+    
+    // Generate bill number
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+    
+    // Find the highest bill number for today
+    const lastOrder = await Order
+      .findOne({ 
+        billNumber: new RegExp(`^BILL-${dateStr}-`) 
+      })
+      .sort({ billNumber: -1 })
+      .limit(1);
+    
+    let sequence = 1;
+    if (lastOrder) {
+      const lastSequence = parseInt(lastOrder.billNumber.split('-')[2]);
+      sequence = lastSequence + 1;
+    }
+    
+    const billNumber = `BILL-${dateStr}-${String(sequence).padStart(4, '0')}`;
+    
     // Create order
     const orderData = {
       bookingId,
@@ -80,8 +117,13 @@ export const createOrderFromBooking = async (req, res) => {
       orderItems,
       tableNumber: booking.tableNumber,
       partySize: booking.partySize,
+      subtotal,
       gstPercentage,
+      gstAmount,
       discountPercentage,
+      discountAmount,
+      totalAmount,
+      billNumber,
       billNotes,
       createdBy: req.user?._id || new mongoose.Types.ObjectId()
     };
