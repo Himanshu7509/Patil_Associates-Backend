@@ -26,6 +26,7 @@ const allowedOrigins = [
   'https://www.patilbars.in',
   'https://patilbars.in',
   'https://www.patilassociates.in',
+  'https://admin.patilassociates.in/',
   'https://patilassociates.in',
   'https://elite-cards-admin-panel.vercel.app'
 ];
