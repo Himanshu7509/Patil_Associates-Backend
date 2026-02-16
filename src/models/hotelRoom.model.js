@@ -24,7 +24,7 @@ const hotelRoomSchema = new mongoose.Schema({
     type: Number,
     required: false,
     min: 1,
-    max: 10
+    max: 20
   },
   pricePerNight: {
     type: Number,
