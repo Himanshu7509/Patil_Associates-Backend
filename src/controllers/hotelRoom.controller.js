@@ -434,6 +434,36 @@ export const uploadRoomImages = [
   }
 ];
 
+// Get room by ID (Public)
+export const getRoomByIdPublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const room = await HotelRoom.findById(id);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: 'Room not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Room retrieved successfully',
+      data: room
+    });
+
+  } catch (error) {
+    console.error('Get room by ID public error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving room',
+      error: error.message
+    });
+  }
+};
+
 // Get room statistics
 export const getRoomStats = async (req, res) => {
   try {

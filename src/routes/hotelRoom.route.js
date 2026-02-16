@@ -1,9 +1,10 @@
 // Import Express Router and hotel room controller
 import express from 'express';
-import { 
+import {  
   createRoom,
   getAllRooms,
   getRoomById,
+  getRoomByIdPublic,
   updateRoom,
   deleteRoom,
   getAvailableRooms,
@@ -20,6 +21,9 @@ router.route('/available')
 
 router.route('/stats')
   .get(protect, authorize('admin'), getRoomStats); // Get room statistics (admin only)
+
+router.route('/public/:id')
+  .get(getRoomByIdPublic); // Get room by ID (public access)
 
 // Image upload route (admin only)
 router.route('/upload/images')
