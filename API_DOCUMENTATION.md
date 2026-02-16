@@ -1,1356 +1,836 @@
-# Patil Associates Unified Backend API Documentation
+# Patil Associate Backend API Documentation
 
-## Overview
-This is a comprehensive RESTful API for Patil Associates that manages multiple business operations including restaurant bookings, hotel management, property listings, and user authentication.
-
-**Base URL:** `http://localhost:3000` or your deployed server URL
-**API Prefix:** `/api`
-
----
+## Base URL
+```
+http://localhost:5000/api
+```
 
 ## Authentication
-
-### JWT Token
-Most endpoints require authentication using JWT tokens. Tokens are returned upon successful login/signup and should be included in the Authorization header:
-
+Most endpoints require JWT authentication. Include the token in the Authorization header:
 ```
 Authorization: Bearer <your-jwt-token>
 ```
 
-### User Roles
-- `customer` - Regular users
-- `admin` - Administrative users with extended privileges
+## API Categories
 
----
+### 1. PUBLIC ROUTES (No Authentication Required)
 
-## API Endpoints
+#### Authentication Routes
 
-### 1. Authentication Routes `/api/auth`
-
-#### Signup
-Create a new user account
-
-**POST** `/api/auth/signup`
-
-**Request Body:**
+**POST** `/auth/signup` - User registration
+- **Request Body**:
 ```json
 {
-  "fullName": "John Doe",
+  "name": "John Doe",
   "email": "john@example.com",
-  "password": "password123",
-  "phoneNo": "+919876543210"
+  "password": "securePassword123",
+  "phone": "+919876543210",
+  "role": "customer" // Optional: customer (default) or admin
 }
 ```
-
-**Response:**
+- **Response**:
 ```json
 {
   "success": true,
   "message": "User registered successfully",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "_id": "60f7b1b1c9e8f10015d1b1a1",
-    "fullName": "John Doe",
-    "email": "john@example.com",
-    "phoneNo": "+919876543210",
-    "roles": ["customer"],
-    "createdAt": "2024-01-01T00:00:00.000Z"
+  "data": {
+    "user": {
+      "_id": "user_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer"
+    },
+    "token": "jwt_token_here"
   }
 }
 ```
 
-#### Login
-Authenticate user and receive JWT token
-
-**POST** `/api/auth/login`
-
-**Request Body:**
+**POST** `/auth/login` - User login
+- **Request Body**:
 ```json
 {
   "email": "john@example.com",
-  "password": "password123"
+  "password": "securePassword123"
 }
 ```
-
-**Response:**
+- **Response**:
 ```json
 {
   "success": true,
   "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "_id": "60f7b1b1c9e8f10015d1b1a1",
-    "fullName": "John Doe",
-    "email": "john@example.com",
-    "roles": ["customer"]
+  "data": {
+    "user": {
+      "_id": "user_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer"
+    },
+    "token": "jwt_token_here"
   }
 }
 ```
 
----
+#### Hotel Room Routes
 
-### 2. Restaurant Booking Routes `/api/restaurant`
+**GET** `/hotel-rooms/public/:id` - Get room by ID (public access)
+- **URL Parameters**: `id` (Room ID)
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Room retrieved successfully",
+  "data": {
+    "_id": "room_id",
+    "roomNumber": "101",
+    "roomType": "deluxe",
+    "floor": 1,
+    "capacity": 2,
+    "pricePerNight": 2500,
+    "viewType": "city",
+    "description": "Beautiful deluxe room with city view",
+    "images": ["image_url_1", "image_url_2"],
+    "isActive": true,
+    "isAvailable": true,
+    "createdAt": "2026-02-16T10:00:00.000Z",
+    "updatedAt": "2026-02-16T10:00:00.000Z"
+  }
+}
+```
 
-The restaurant booking system allows customers to browse menu items and book tables either with or without creating an account. Customers can place orders and book tables seamlessly without requiring authentication, though registered users have additional features like viewing their booking history.
+**GET** `/hotel-rooms/available` - Get available rooms for specific dates
+- **Query Parameters**:
+  - `checkInDate` (required): Date format YYYY-MM-DD
+  - `checkOutDate` (required): Date format YYYY-MM-DD
+  - `numberOfGuests` (optional): Number of guests
+  - `roomType` (optional): Filter by room type
+- **Example**: `/hotel-rooms/available?checkInDate=2026-03-01&checkOutDate=2026-03-05&numberOfGuests=2&roomType=deluxe`
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Available rooms retrieved successfully",
+  "data": {
+    "checkInDate": "2026-03-01",
+    "checkOutDate": "2026-03-05",
+    "numberOfGuests": 2,
+    "roomType": "deluxe",
+    "availableRooms": [...],
+    "count": 5
+  }
+}
+```
 
-#### Get All Menu Items (Public)
-Browse all available menu items before placing an order
+**GET** `/hotel-rooms` - Get all rooms with pagination
+- **Query Parameters**:
+  - `isActive` (optional): true/false
+  - `isAvailable` (optional): true/false
+  - `roomType` (optional): deluxe, standard, suite, etc.
+  - `viewType` (optional): city, ocean, garden, etc.
+  - `floor` (optional): Floor number
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 12)
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Rooms retrieved successfully",
+  "data": [...],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalItems": 50,
+    "itemsPerPage": 12,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  },
+  "count": 12
+}
+```
 
-**GET** `/api/menu/`
+#### Menu Routes
 
-**Response:**
+**GET** `/menu` - Get all menu items
+- **Query Parameters**:
+  - `category` (optional): Filter by category
+  - `isAvailable` (optional): true/false
+  - `page`, `limit` for pagination
+- **Response**:
 ```json
 {
   "success": true,
   "message": "Menu items retrieved successfully",
   "data": [
     {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "name": "Paneer Tikka",
-      "description": "Grilled cottage cheese with spices",
-      "price": 250,
-      "category": "appetizer",
-      "dietaryOptions": ["vegetarian"],
-      "isActive": true,
-      "image": "https://example.com/paneer-tikka.jpg"
+      "_id": "item_id",
+      "name": "Butter Chicken",
+      "description": "Creamy butter chicken with naan",
+      "price": 350,
+      "category": "main_course",
+      "isAvailable": true,
+      "image": "image_url"
     }
   ]
 }
 ```
 
-#### Get Bookings by Date Range (Public)
-Retrieve restaurant bookings within a specific date range
+**GET** `/menu/:id` - Get menu item by ID
+- **URL Parameters**: `id` (Menu item ID)
 
-**GET** `/api/restaurant/date-range?startDate=2024-01-01&endDate=2024-01-31`
+**GET** `/menu/category/:category` - Get menu items by category
+- **URL Parameters**: `category` (main_course, starter, dessert, etc.)
 
-**Query Parameters:**
-- `startDate` (required): Start date in YYYY-MM-DD format
-- `endDate` (required): End date in YYYY-MM-DD format
+#### Restaurant Routes
 
-**Response:**
+**GET** `/restaurants` - Get all restaurants
+- **Query Parameters**: `isActive`, `page`, `limit`
+
+**GET** `/restaurants/:id` - Get restaurant by ID
+- **URL Parameters**: `id` (Restaurant ID)
+
+#### Property Routes
+
+**GET** `/properties` - Get all properties
+- **Query Parameters**: `isActive`, `propertyType`, `location`, `page`, `limit`
+
+**GET** `/properties/:id` - Get property by ID
+- **URL Parameters**: `id` (Property ID)
+
+#### Property Listing Routes
+
+**GET** `/property-listings` - Get all property listings
+- **Query Parameters**: `status`, `propertyType`, `minPrice`, `maxPrice`, `page`, `limit`
+
+**GET** `/property-listings/:id` - Get property listing by ID
+- **URL Parameters**: `id` (Property listing ID)
+
+#### Table Routes
+
+**GET** `/tables` - Get all tables
+- **Query Parameters**: `restaurantId`, `capacity`, `isActive`, `page`, `limit`
+
+**GET** `/tables/:id` - Get table by ID
+- **URL Parameters**: `id` (Table ID)
+
+**GET** `/tables/available` - Get available tables for specific date/time
+- **Query Parameters**:
+  - `date` (required): YYYY-MM-DD
+  - `time` (required): HH:MM format
+  - `restaurantId` (optional)
+  - `numberOfGuests` (optional)
+
+#### Hotel Booking Routes
+
+**GET** `/hotel-bookings/available-rooms` - Get available rooms for booking
+- **Query Parameters**: `checkInDate`, `checkOutDate`, `numberOfGuests` (optional)
+
+#### Query Routes
+
+**POST** `/queries` - Submit a query/contact form
+- **Request Body**:
 ```json
 {
-  "success": true,
-  "message": "Bookings retrieved successfully",
-  "data": [
-    {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "partySize": 4,
-      "bookingDate": "2024-01-15T00:00:00.000Z",
-      "bookingTime": "19:30",
-      "status": "confirmed",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "phone": "+919876543210",
+  "message": "I would like to know more about your services",
+  "product": "bar & restaurant", // Options: bar & restaurant, hotel, properties
+  "source": "website" // Optional: website, referral, advertisement, other
 }
 ```
-
-#### Get Available Tables (Public)
-Check which tables are available for a specific date and time
-
-**GET** `/api/restaurant/available-tables?date=2024-01-15&time=19:30`
-
-**Query Parameters:**
-- `date` (required): Date in YYYY-MM-DD format
-- `time` (required): Time in HH:MM format
-
-**Response:**
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Available tables retrieved successfully",
+  "message": "Query submitted successfully",
   "data": {
-    "date": "2024-01-15",
-    "time": "19:30",
-    "availableTables": ["1", "3", "5", "7"],
-    "bookedTables": ["2", "4", "6"],
-    "totalAvailable": 4
+    "_id": "query_id",
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "phone": "+919876543210",
+    "message": "I would like to know more about your services",
+    "product": "bar & restaurant",
+    "source": "website",
+    "status": "pending",
+    "createdAt": "2026-02-16T10:00:00.000Z",
+    "updatedAt": "2026-02-16T10:00:00.000Z"
   }
 }
 ```
 
-#### Get All Bookings (Authenticated)
-Retrieve all bookings for the authenticated user
+### 2. USER ROUTES (Authentication Required)
 
-**GET** `/api/restaurant/`
+#### Profile Routes
 
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Response:**
+**GET** `/profile` - Get user's own profile
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Bookings retrieved successfully",
-  "data": [
-    {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "customerId": "60f7b1b1c9e8f10015d1b1a1",
-      "partySize": 4,
-      "bookingDate": "2024-01-15T00:00:00.000Z",
-      "bookingTime": "19:30",
-      "status": "confirmed",
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
+  "message": "Profile retrieved successfully",
+  "data": {
+    "_id": "user_id",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+919876543210",
+    "role": "customer",
+    "profilePicture": "image_url",
+    "documents": ["doc_url_1", "doc_url_2"],
+    "createdAt": "2026-02-16T10:00:00.000Z"
+  }
 }
 ```
 
-#### Create Booking (Public/Authenticated)
-Create a new restaurant booking. This endpoint supports both authenticated users (who can use their account details) and unauthenticated users (guests).
-
-**POST** `/api/restaurant/`
-
-**For Unauthenticated Users (Guests):**
-Create a booking without an account by providing customer details.
-
-**Request Body:**
+**PUT** `/profile` - Update user's own profile
+- **Request Body**:
 ```json
 {
-  "partySize": 4,
-  "bookingDate": "2024-01-15",
-  "bookingTime": "19:30",
-  "specialRequests": "Window seat preferred",
-  "tableNumber": "12",
-  "bookingType": "table",
-  "customerName": "John Doe",
-  "customerEmail": "john@example.com",
-  "customerPhone": "+919876543210",
-  "orderDetails": [
-    {
-      "itemId": "60f7b1b1c9e8f10015d1b1a1",
-      "quantity": 2,
-      "price": 250
-    }
-  ],
-  "totalAmount": 500
+  "name": "John Smith",
+  "phone": "+919876543211",
+  "address": "New Address"
 }
 ```
 
-**For Authenticated Users:**
-Create a booking using account details. Customer information will be auto-populated from the user's account if not provided.
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
+**POST** `/profile/picture` - Upload profile picture
+- **Form Data**: `profilePicture` (file, image format)
+- **Response**:
 ```json
 {
-  "partySize": 4,
-  "bookingDate": "2024-01-15",
-  "bookingTime": "19:30",
-  "specialRequests": "Window seat preferred",
-  "tableNumber": "12",
-  "bookingType": "table",
-  "orderDetails": [
-    {
-      "itemId": "60f7b1b1c9e8f10015d1b1a1",
-      "quantity": 2,
-      "price": 250
-    }
-  ],
-  "totalAmount": 500
-  // customerName, customerEmail, customerPhone will be auto-populated from account
+  "success": true,
+  "message": "Profile picture uploaded successfully",
+  "data": {
+    "profilePicture": "new_image_url"
+  }
 }
 ```
 
-**Response:**
+**POST** `/profile/document` - Upload document
+- **Form Data**: `document` (file, PDF/DOC formats)
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Document uploaded successfully",
+  "data": {
+    "documentUrl": "document_url"
+  }
+}
+```
+
+#### Hotel Booking Routes
+
+**POST** `/hotel-bookings` - Create a new booking
+- **Request Body**:
+```json
+{
+  "roomId": "room_id",
+  "checkInDate": "2026-03-01",
+  "checkOutDate": "2026-03-05",
+  "numberOfGuests": 2,
+  "specialRequests": "Early check-in preferred"
+}
+```
+- **Response**:
 ```json
 {
   "success": true,
   "message": "Booking created successfully",
   "data": {
-    "_id": "60f7b1b1c9e8f10015d1b1a1",
-    "customerId": {
-      "_id": "user_id",
-      "fullName": "John Doe",
-      "email": "john@example.com"
-    },
-    "customerName": "John Doe",
-    "customerEmail": "john@example.com",
-    "customerPhone": "+919876543210",
-    "partySize": 4,
-    "bookingDate": "2024-01-15T00:00:00.000Z",
-    "bookingTime": "19:30",
-    "specialRequests": "Window seat preferred",
-    "tableNumber": "12",
+    "_id": "booking_id",
+    "userId": "user_id",
+    "roomId": "room_id",
+    "checkInDate": "2026-03-01T00:00:00.000Z",
+    "checkOutDate": "2026-03-05T00:00:00.000Z",
+    "numberOfGuests": 2,
+    "totalAmount": 10000,
     "status": "pending",
-    "bookingType": "table",
-    "orderDetails": [
-      {
-        "itemId": "60f7b1b1c9e8f10015d1b1a1",
-        "itemName": "Paneer Tikka",
-        "quantity": 2,
-        "price": 250,
-        "description": "Grilled cottage cheese with spices",
-        "category": "appetizer",
-        "ingredients": ["paneer", "spices", "herbs"],
-        "dietaryOptions": ["vegetarian"],
-        "image": "https://example.com/paneer-tikka.jpg",
-        "cookingTime": 25
-      }
-    ],
-    "totalAmount": 500,
-    "tableDetails": [
-      {
-        "tableId": "table_id",
-        "tableNumber": "12",
-        "capacity": 6,
-        "location": "indoor",
-        "shape": "round",
-        "features": ["window_view", "quiet_corner"],
-        "isActive": true,
-        "notes": "VIP table near window"
-      }
-    ],
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "specialRequests": "Early check-in preferred"
   }
 }
 ```
 
-#### Get Booking by ID (Authenticated)
-Retrieve a specific booking by ID
-
-**GET** `/api/restaurant/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Booking (Admin Only)
-Update an existing booking
-
-**PUT** `/api/restaurant/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "status": "confirmed",
-  "tableNumber": "5"
-}
-```
-
-#### Delete Booking (Admin Only)
-Delete a booking
-
-**DELETE** `/api/restaurant/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 3. Table Management Routes `/api/tables`
-
-#### Get Available Tables by Criteria (Public)
-Get available tables based on specific criteria
-
-**GET** `/api/tables/available?date=2024-01-15&time=19:30&partySize=4&location=indoor`
-
-**Query Parameters:**
-- `date` (required): Date in YYYY-MM-DD format
-- `time` (required): Time in HH:MM format
-- `partySize` (required): Number of people
-- `location` (optional): Table location (indoor, outdoor, patio, vip, bar_area)
-
-**Response:**
+**GET** `/hotel-bookings/my-bookings` - Get user's bookings
+- **Query Parameters**: `status`, `page`, `limit`
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Available tables retrieved successfully",
+  "message": "Bookings retrieved successfully",
+  "data": [...],
+  "count": 3
+}
+```
+
+**GET** `/hotel-bookings/:id` - Get specific booking by ID
+- **URL Parameters**: `id` (Booking ID)
+
+**PUT** `/hotel-bookings/:id` - Update booking
+- **URL Parameters**: `id` (Booking ID)
+- **Request Body**: Same as POST but only fields to update
+
+**DELETE** `/hotel-bookings/:id` - Cancel booking
+- **URL Parameters**: `id` (Booking ID)
+
+#### Restaurant Booking Routes
+
+**POST** `/restaurant-bookings` - Create a new restaurant booking
+- **Request Body**:
+```json
+{
+  "restaurantId": "restaurant_id",
+  "tableId": "table_id",
+  "date": "2026-03-01",
+  "time": "19:30",
+  "numberOfGuests": 4,
+  "specialRequests": "Window seat preferred"
+}
+```
+
+**GET** `/restaurant-bookings/my-bookings` - Get user's restaurant bookings
+- **Query Parameters**: `status`, `page`, `limit`
+
+**GET** `/restaurant-bookings/:id` - Get specific restaurant booking by ID
+- **URL Parameters**: `id` (Restaurant booking ID)
+
+**PUT** `/restaurant-bookings/:id` - Update restaurant booking
+- **URL Parameters**: `id` (Restaurant booking ID)
+
+**DELETE** `/restaurant-bookings/:id` - Cancel restaurant booking
+- **URL Parameters**: `id` (Restaurant booking ID)
+
+#### Billing Routes
+
+**GET** `/billing/my-bills` - Get user's bills
+- **Query Parameters**: `status`, `page`, `limit`
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Bills retrieved successfully",
   "data": [
     {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "tableNumber": "5",
-      "capacity": 6,
-      "location": "indoor",
-      "shape": "round",
-      "isActive": true
+      "_id": "bill_id",
+      "bookingId": "booking_id",
+      "userId": "user_id",
+      "amount": 2500,
+      "gstAmount": 450,
+      "totalAmount": 2950,
+      "status": "pending",
+      "items": [...],
+      "createdAt": "2026-02-16T10:00:00.000Z"
     }
   ]
 }
 ```
 
-#### Get All Tables (Admin Only)
-Retrieve all tables
+**GET** `/billing/:id` - Get specific bill by ID
+- **URL Parameters**: `id` (Bill ID)
 
-**GET** `/api/tables/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Query Parameters:**
-- `isActive` (optional): Filter by active status (true/false)
-- `location` (optional): Filter by location
-- `capacity` (optional): Minimum capacity
-
-#### Create Table (Admin Only)
-Create a new table
-
-**POST** `/api/tables/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
+**POST** `/billing/:id/pay` - Pay a bill
+- **URL Parameters**: `id` (Bill ID)
+- **Request Body**:
 ```json
 {
-  "tableNumber": "10",
-  "capacity": 4,
-  "location": "indoor",
-  "shape": "round",
-  "features": ["window_view", "quiet_corner"],
-  "notes": "Corner table near window"
+  "paymentMethod": "credit_card",
+  "transactionId": "txn_123456"
 }
 ```
 
-#### Get Table by ID (Admin Only)
-Retrieve a specific table
+**GET** `/billing/:id/print` - Get printable bill
+- **URL Parameters**: `id` (Bill ID)
+- **Response**: PDF file or HTML content
 
-**GET** `/api/tables/:id`
+### 3. ADMIN ROUTES (Authentication + Admin Role Required)
 
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
+#### User Management Routes
 
-#### Update Table (Admin Only)
-Update table information
-
-**PUT** `/api/tables/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Table (Admin Only)
-Delete a table
-
-**DELETE** `/api/tables/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 4. Menu Management Routes `/api/menu`
-
-#### Get All Menu Items (Public)
-Retrieve all active menu items
-
-**GET** `/api/menu/`
-
-**Response:**
+**GET** `/admin/users` - Get all users
+- **Query Parameters**: `role`, `isActive`, `page`, `limit`
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Menu items retrieved successfully",
+  "message": "Users retrieved successfully",
   "data": [
     {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "name": "Paneer Tikka",
-      "description": "Grilled cottage cheese with spices",
-      "price": 250,
-      "category": "appetizer",
-      "dietaryOptions": ["vegetarian"],
+      "_id": "user_id",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer",
       "isActive": true,
-      "image": "https://example.com/paneer-tikka.jpg"
+      "createdAt": "2026-02-16T10:00:00.000Z"
     }
   ]
 }
 ```
 
-#### Search Menu Items (Public)
-Search menu items by name or description
+**GET** `/admin/users/:id` - Get user by ID
+- **URL Parameters**: `id` (User ID)
 
-**GET** `/api/menu/search?q=paneer`
-
-**Query Parameters:**
-- `q` (required): Search query
-
-#### Get Menu Items by Category (Public)
-Get menu items by category
-
-**GET** `/api/menu/category/:category`
-
-**Parameters:**
-- `category`: appetizer, main_course, dessert, beverage, etc.
-
-#### Get Dietary Menu Items (Public)
-Get menu items for specific dietary requirements
-
-**GET** `/api/menu/dietary/:dietaryType`
-
-**Parameters:**
-- `dietaryType`: vegetarian, vegan, gluten_free, etc.
-
-#### Create Menu Item (Admin Only)
-Create a new menu item
-
-**POST** `/api/menu/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
+**PUT** `/admin/users/:id` - Update user
+- **URL Parameters**: `id` (User ID)
+- **Request Body**:
 ```json
 {
-  "name": "Paneer Butter Masala",
-  "description": "Cottage cheese in rich tomato gravy",
-  "price": 320,
-  "category": "main_course",
-  "ingredients": ["paneer", "tomato", "butter", "cream"],
-  "dietaryOptions": ["vegetarian"],
-  "image": "https://example.com/paneer-butter-masala.jpg",
-  "cookingTime": 30
+  "name": "Updated Name",
+  "role": "admin",
+  "isActive": false
 }
 ```
 
-#### Get Menu Item by ID (Admin Only)
-Retrieve a specific menu item
+**DELETE** `/admin/users/:id` - Delete user
+- **URL Parameters**: `id` (User ID)
 
-**GET** `/api/menu/:id`
+#### Hotel Room Routes
 
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Menu Item (Admin Only)
-Update menu item information
-
-**PUT** `/api/menu/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Menu Item (Admin Only)
-Delete a menu item
-
-**DELETE** `/api/menu/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 5. Hotel Room Routes `/api/hotel/rooms`
-
-#### Get Available Rooms (Public)
-Get available rooms for specific dates
-
-**GET** `/api/hotel/rooms/available?checkIn=2024-01-15&checkOut=2024-01-18`
-
-**Query Parameters:**
-- `checkIn` (required): Check-in date (YYYY-MM-DD)
-- `checkOut` (required): Check-out date (YYYY-MM-DD)
-
-**Response:**
+**POST** `/hotel-rooms` - Create a new room
+- **Form Data**:
+  - `roomNumber` (string, required)
+  - `roomType` (string, required): deluxe, standard, suite
+  - `floor` (number, required)
+  - `capacity` (number, required)
+  - `pricePerNight` (number, required)
+  - `viewType` (string): city, ocean, garden
+  - `description` (string)
+  - `images` (multiple files, image format)
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Available rooms retrieved successfully",
-  "data": [
-    {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "roomNumber": "101",
-      "roomType": "deluxe",
-      "pricePerNight": 2500,
-      "capacity": 2,
-      "isAvailable": true
-    }
-  ]
-}
-```
-
-#### Get Room Statistics (Admin Only)
-Get room statistics and analytics
-
-**GET** `/api/hotel/rooms/stats`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Create Room (Admin Only)
-Create a new hotel room
-
-**POST** `/api/hotel/rooms/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "roomNumber": "105",
-  "roomType": "suite",
-  "floor": 3,
-  "capacity": 4,
-  "pricePerNight": 4500,
-  "amenities": ["wifi", "ac", "mini_bar", "balcony"],
-  "viewType": "city",
-  "bedType": "king",
-  "size": 450,
-  "description": "Luxury suite with city view"
-}
-```
-
-#### Get All Rooms (Admin Only)
-Retrieve all hotel rooms
-
-**GET** `/api/hotel/rooms/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Get Room by ID (Admin Only)
-Retrieve a specific room
-
-**GET** `/api/hotel/rooms/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Room (Admin Only)
-Update room information
-
-**PUT** `/api/hotel/rooms/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Room (Admin Only)
-Delete a room
-
-**DELETE** `/api/hotel/rooms/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 6. Hotel Booking Routes `/api/hotel/bookings`
-
-#### Check Room Availability (Public)
-Check if rooms are available for specific dates
-
-**GET** `/api/hotel/bookings/check-availability?checkIn=2024-01-15&checkOut=2024-01-18`
-
-**Query Parameters:**
-- `checkIn` (required): Check-in date (YYYY-MM-DD)
-- `checkOut` (required): Check-out date (YYYY-MM-DD)
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Room availability checked successfully",
+  "message": "Room created successfully",
   "data": {
-    "checkIn": "2024-01-15",
-    "checkOut": "2024-01-18",
-    "availableRooms": 12,
-    "totalRooms": 20
+    "_id": "room_id",
+    "roomNumber": "101",
+    "roomType": "deluxe",
+    "floor": 1,
+    "capacity": 2,
+    "pricePerNight": 2500,
+    "images": ["image_url_1", "image_url_2"],
+    "isActive": true,
+    "isAvailable": true
   }
 }
 ```
 
-#### Get Bookings by Date Range (Public)
-Get hotel bookings within a date range
-
-**GET** `/api/hotel/bookings/date-range?startDate=2024-01-01&endDate=2024-01-31`
-
-**Query Parameters:**
-- `startDate` (required): Start date (YYYY-MM-DD)
-- `endDate` (required): End date (YYYY-MM-DD)
-
-#### Get All Bookings (Authenticated)
-Retrieve all bookings for the authenticated user
-
-**GET** `/api/hotel/bookings/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Create Booking (Authenticated)
-Create a new hotel booking
-
-**POST** `/api/hotel/bookings/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "roomId": "60f7b1b1c9e8f10015d1b1a1",
-  "checkInDate": "2024-01-15",
-  "checkOutDate": "2024-01-18",
-  "numberOfGuests": 2,
-  "specialRequests": "Late check-in requested",
-  "guestName": "John Doe",
-  "guestEmail": "john@example.com",
-  "guestPhone": "+919876543210"
-}
-```
-
-#### Get Booking by ID (Authenticated)
-Retrieve a specific booking
-
-**GET** `/api/hotel/bookings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Booking (Admin Only)
-Update booking information
-
-**PUT** `/api/hotel/bookings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Booking (Admin Only)
-Delete a booking
-
-**DELETE** `/api/hotel/bookings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Get Booking Statistics (Admin Only)
-Get booking statistics and analytics
-
-**GET** `/api/hotel/bookings/stats`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 7. Property Routes `/api/properties`
-
-#### Get Featured Properties (Public)
-Retrieve featured properties
-
-**GET** `/api/properties/featured`
-
-**Response:**
+**GET** `/hotel-rooms/stats` - Get room statistics
+- **Response**:
 ```json
 {
   "success": true,
-  "message": "Featured properties retrieved successfully",
-  "data": [
+  "message": "Room statistics retrieved successfully",
+  "data": {
+    "totalRooms": 50,
+    "activeRooms": 45,
+    "availableRooms": 30,
+    "occupiedRooms": 15,
+    "roomTypeStats": [
+      {
+        "_id": "deluxe",
+        "count": 20,
+        "averagePrice": 3000
+      }
+    ]
+  }
+}
+```
+
+**GET** `/hotel-rooms/:id` - Get room by ID (admin)
+- **URL Parameters**: `id` (Room ID)
+
+**PUT** `/hotel-rooms/:id` - Update room
+- **URL Parameters**: `id` (Room ID)
+- **Form Data**: Same as POST but optional fields
+
+**DELETE** `/hotel-rooms/:id` - Delete room
+- **URL Parameters**: `id` (Room ID)
+
+**POST** `/hotel-rooms/upload/images` - Upload room images
+- **Form Data**: `images` (multiple files, image format)
+
+#### Menu Routes
+
+**POST** `/menu` - Create a new menu item
+- **Request Body**:
+```json
+{
+  "name": "Butter Chicken",
+  "description": "Creamy butter chicken",
+  "price": 350,
+  "category": "main_course",
+  "isAvailable": true
+}
+```
+
+**PUT** `/menu/:id` - Update menu item
+- **URL Parameters**: `id` (Menu item ID)
+
+**DELETE** `/menu/:id` - Delete menu item
+- **URL Parameters**: `id` (Menu item ID)
+
+#### Restaurant Routes
+
+**POST** `/restaurants` - Create a new restaurant
+- **Request Body**:
+```json
+{
+  "name": "The Grand Restaurant",
+  "description": "Fine dining experience",
+  "location": "Main Street",
+  "contact": "+919876543210",
+  "isActive": true
+}
+```
+
+**PUT** `/restaurants/:id` - Update restaurant
+- **URL Parameters**: `id` (Restaurant ID)
+
+**DELETE** `/restaurants/:id` - Delete restaurant
+- **URL Parameters**: `id` (Restaurant ID)
+
+#### Property Routes
+
+**POST** `/properties` - Create a new property
+- **Request Body**:
+```json
+{
+  "title": "Luxury Villa",
+  "description": "Beautiful luxury villa",
+  "propertyType": "villa",
+  "location": "Beach Road",
+  "price": 5000000,
+  "bedrooms": 4,
+  "bathrooms": 3,
+  "area": 2500,
+  "isActive": true
+}
+```
+
+**PUT** `/properties/:id` - Update property
+- **URL Parameters**: `id` (Property ID)
+
+**DELETE** `/properties/:id` - Delete property
+- **URL Parameters**: `id` (Property ID)
+
+#### Property Listing Routes
+
+**POST** `/property-listings` - Create a new property listing
+- **Request Body**:
+```json
+{
+  "propertyId": "property_id",
+  "listingType": "sale",
+  "price": 5000000,
+  "status": "available"
+}
+```
+
+**PUT** `/property-listings/:id` - Update property listing
+- **URL Parameters**: `id` (Property listing ID)
+
+**DELETE** `/property-listings/:id` - Delete property listing
+- **URL Parameters**: `id` (Property listing ID)
+
+#### Table Routes
+
+**POST** `/tables` - Create a new table
+- **Request Body**:
+```json
+{
+  "restaurantId": "restaurant_id",
+  "tableNumber": "T01",
+  "capacity": 4,
+  "location": "window",
+  "isActive": true
+}
+```
+
+**PUT** `/tables/:id` - Update table
+- **URL Parameters**: `id` (Table ID)
+
+**DELETE** `/tables/:id` - Delete table
+- **URL Parameters**: `id` (Table ID)
+
+#### Hotel Booking Routes
+
+**GET** `/hotel-bookings` - Get all bookings
+- **Query Parameters**: `status`, `userId`, `roomId`, `page`, `limit`
+
+**PUT** `/hotel-bookings/:id/status` - Update booking status
+- **URL Parameters**: `id` (Booking ID)
+- **Request Body**:
+```json
+{
+  "status": "confirmed" // pending, confirmed, checked_in, checked_out, cancelled
+}
+```
+
+**DELETE** `/hotel-bookings/:id` - Delete booking (admin)
+- **URL Parameters**: `id` (Booking ID)
+
+#### Restaurant Booking Routes
+
+**GET** `/restaurant-bookings` - Get all restaurant bookings
+- **Query Parameters**: `status`, `userId`, `restaurantId`, `page`, `limit`
+
+**PUT** `/restaurant-bookings/:id/status` - Update restaurant booking status
+- **URL Parameters**: `id` (Restaurant booking ID)
+- **Request Body**:
+```json
+{
+  "status": "confirmed" // pending, confirmed, completed, cancelled
+}
+```
+
+**DELETE** `/restaurant-bookings/:id` - Delete restaurant booking (admin)
+- **URL Parameters**: `id` (Restaurant booking ID)
+
+#### Billing Routes
+
+**GET** `/billing` - Get all bills
+- **Query Parameters**: `status`, `userId`, `page`, `limit`
+
+**POST** `/billing` - Create a new bill
+- **Request Body**:
+```json
+{
+  "bookingId": "booking_id",
+  "userId": "user_id",
+  "amount": 2500,
+  "items": [
     {
-      "_id": "60f7b1b1c9e8f10015d1b1a1",
-      "title": "Luxury Villa in Mumbai",
-      "description": "Beautiful villa with modern amenities",
-      "propertyType": "residential",
-      "listingType": "sale",
-      "price": 25000000,
-      "area": 2500,
-      "bedrooms": 4,
-      "bathrooms": 3,
-      "images": ["https://example.com/image1.jpg"],
-      "isFeatured": true
+      "description": "Room charge",
+      "quantity": 1,
+      "unitPrice": 2500,
+      "total": 2500
     }
   ]
 }
 ```
 
-#### Get Property Statistics (Admin Only)
-Get property statistics
+**PUT** `/billing/:id` - Update bill
+- **URL Parameters**: `id` (Bill ID)
 
-**GET** `/api/properties/stats`
+**DELETE** `/billing/:id` - Delete bill
+- **URL Parameters**: `id` (Bill ID)
 
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
+#### Query Management Routes (Admin Only)
 
-#### Upload Property Images (Admin Only)
-Upload images for a property
-
-**POST** `/api/properties/upload/images`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Form Data:**
-- `images` (multiple): Image files
-
-#### Create Property (Admin Only)
-Create a new property listing
-
-**POST** `/api/properties/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
+**GET** `/queries` - Get all queries
+- **Query Parameters**: `product`, `status`, `page`, `limit`
+- **Response**:
 ```json
 {
-  "title": "Luxury Apartment",
-  "description": "Modern apartment in prime location",
-  "propertyType": "residential",
-  "listingType": "rent",
-  "address": {
-    "street": "Main Street",
-    "city": "Mumbai",
-    "state": "Maharashtra",
-    "zipCode": "400001",
-    "country": "India"
+  "success": true,
+  "message": "Queries retrieved successfully",
+  "data": [...],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalItems": 50,
+    "itemsPerPage": 10,
+    "hasNextPage": true,
+    "hasPrevPage": false
   },
-  "price": 50000,
-  "area": 1200,
-  "areaUnit": "sqft",
-  "bedrooms": 2,
-  "bathrooms": 2,
-  "parking": 1,
-  "amenities": ["gym", "swimming_pool", "parking"],
-  "features": ["fully_furnished", "central_ac"],
-  "contactInfo": {
-    "name": "Property Manager",
-    "email": "manager@example.com",
-    "phone": "+919876543210"
+  "count": 10
+}
+```
+
+**GET** `/queries/stats` - Get query statistics
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Query statistics retrieved successfully",
+  "data": {
+    "totalQueries": 150,
+    "productStats": [
+      { "_id": "bar & restaurant", "count": 60 },
+      { "_id": "hotel", "count": 50 },
+      { "_id": "properties", "count": 40 }
+    ],
+    "statusStats": [
+      { "_id": "pending", "count": 80 },
+      { "_id": "reviewed", "count": 40 },
+      { "_id": "contacted", "count": 20 },
+      { "_id": "resolved", "count": 10 }
+    ],
+    "recentQueries": 25
   }
 }
 ```
 
-#### Get All Properties (Admin Only)
-Retrieve all properties
+**GET** `/queries/:id` - Get specific query by ID
+- **URL Parameters**: `id` (Query ID)
 
-**GET** `/api/properties/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Query Parameters:**
-- `propertyType`: Filter by property type
-- `listingType`: Filter by listing type (sale/rent)
-- `city`: Filter by city
-- `minPrice`: Minimum price
-- `maxPrice`: Maximum price
-
-#### Get Property by ID (Admin Only)
-Retrieve a specific property
-
-**GET** `/api/properties/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Property (Admin Only)
-Update property information
-
-**PUT** `/api/properties/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Property (Admin Only)
-Delete a property
-
-**DELETE** `/api/properties/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
-
-### 8. Property Listing Routes `/api/property-listings`
-
-#### Create Property Listing (Authenticated)
-Create a new property inquiry/booking
-
-**POST** `/api/property-listings/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
+**PUT** `/queries/:id/status` - Update query status
+- **URL Parameters**: `id` (Query ID)
+- **Request Body**:
 ```json
 {
-  "propertyId": "60f7b1b1c9e8f10015d1b1a1",
-  "listingType": "inquiry",
-  "customerInfo": {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "phone": "+919876543210",
-    "message": "Interested in scheduling a viewing"
-  }
+  "status": "reviewed" // Options: pending, reviewed, contacted, resolved, closed
 }
 ```
 
-#### Get All Property Listings (Authenticated)
-Retrieve all property listings for the authenticated user
-
-**GET** `/api/property-listings/`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Schedule Viewing (Admin Only)
-Schedule a property viewing
-
-**POST** `/api/property-listings/:id/schedule-viewing`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "date": "2024-01-20",
-  "time": "15:00"
-}
-```
-
-#### Update Viewing Status (Admin Only)
-Update the status of a property viewing
-
-**PUT** `/api/property-listings/:id/viewing-status`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Request Body:**
-```json
-{
-  "status": "completed"
-}
-```
-
-#### Get Listing Statistics (Admin Only)
-Get property listing statistics
-
-**GET** `/api/property-listings/stats`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Upload Listing Documents (Admin Only)
-Upload documents for a property listing
-
-**POST** `/api/property-listings/:id/documents`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-**Form Data:**
-- `documents` (multiple): Document files
-
-#### Delete Listing Document (Admin Only)
-Delete a document from a property listing
-
-**DELETE** `/api/property-listings/:id/documents/:documentId`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Get Property Listing by ID (Admin Only)
-Retrieve a specific property listing
-
-**GET** `/api/property-listings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Update Property Listing (Admin Only)
-Update property listing information
-
-**PUT** `/api/property-listings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
-#### Delete Property Listing (Admin Only)
-Delete a property listing
-
-**DELETE** `/api/property-listings/:id`
-
-**Headers:**
-```
-Authorization: Bearer <jwt-token>
-```
-
----
+**DELETE** `/queries/:id` - Delete query
+- **URL Parameters**: `id` (Query ID)
 
 ## Error Responses
 
-### General Error Format
+All endpoints return consistent error responses:
+
 ```json
 {
   "success": false,
-  "message": "Error message description",
-  "error": "Detailed error information"
+  "message": "Error message here",
+  "error": "Detailed error description"
 }
 ```
 
-### Common HTTP Status Codes
-- **200 OK**: Successful request
-- **201 Created**: Resource successfully created
-- **400 Bad Request**: Invalid request data
-- **401 Unauthorized**: Missing or invalid authentication
-- **403 Forbidden**: Access denied, insufficient permissions
-- **404 Not Found**: Resource not found
-- **409 Conflict**: Resource already exists
-- **500 Internal Server Error**: Server error
+## Success Responses
 
----
+Successful requests return:
 
-## Data Models
-
-### User Model
 ```json
 {
-  "_id": "ObjectId",
-  "fullName": "String",
-  "email": "String",
-  "password": "String (hashed)",
-  "phoneNo": "String",
-  "roles": ["customer"|"admin"],
-  "createdAt": "Date",
-  "updatedAt": "Date"
+  "success": true,
+  "message": "Success message",
+  "data": {...} // Response data
 }
 ```
 
-### Restaurant Booking Model
-```json
-{
-  "_id": "ObjectId",
-  "customerId": "ObjectId (ref: User)",
-  "customerName": "String",
-  "customerEmail": "String",
-  "customerPhone": "String",
-  "partySize": "Number",
-  "bookingDate": "Date",
-  "bookingTime": "String (HH:MM)",
-  "specialRequests": "String",
-  "tableNumber": "String",
-  "status": "pending|confirmed|cancelled|completed",
-  "bookingType": "table|event|private_dining|regular",
-  "orderDetails": [
-    {
-      "itemId": "ObjectId (ref: MenuItem)",
-      "itemName": "String",
-      "quantity": "Number",
-      "price": "Number",
-      "description": "String",
-      "category": "String",
-      "ingredients": ["String"],
-      "dietaryOptions": ["String"],
-      "image": "String (URL)",
-      "cookingTime": "Number (minutes)"
-    }
-  ],
-  "tableDetails": [
-    {
-      "tableId": "ObjectId (ref: Table)",
-      "tableNumber": "String",
-      "capacity": "Number",
-      "location": "String",
-      "shape": "String",
-      "features": ["String"],
-      "isActive": "Boolean",
-      "notes": "String"
-    }
-  ],
-  "totalAmount": "Number",
-  "notes": "String",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
+## Pagination
 
-### Table Model
-```json
-{
-  "_id": "ObjectId",
-  "tableNumber": "String",
-  "capacity": "Number",
-  "location": "indoor|outdoor|patio|vip|bar_area",
-  "shape": "round|square|rectangle|oval|semi_circle",
-  "features": ["window_view", "quiet_corner", "near_bar", "accessible", "high_top", "booth"],
-  "isActive": "Boolean",
-  "notes": "String",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
+Paginated endpoints return:
 
-### Menu Item Model
 ```json
 {
-  "_id": "ObjectId",
-  "name": "String",
-  "description": "String",
-  "price": "Number",
-  "category": "appetizer|main_course|dessert|beverage|alcoholic_beverage|non_alcoholic_beverage|specials",
-  "ingredients": ["String"],
-  "dietaryOptions": ["vegetarian", "vegan", "gluten_free", "dairy_free", "nut_free", "halal", "kosher"],
-  "isActive": "Boolean",
-  "image": "String (URL)",
-  "cookingTime": "Number (minutes)",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
-
-### Hotel Room Model
-```json
-{
-  "_id": "ObjectId",
-  "roomNumber": "String",
-  "roomType": "single|double|twin|suite|deluxe|family|presidential",
-  "floor": "Number",
-  "capacity": "Number",
-  "pricePerNight": "Number",
-  "amenities": ["String"],
-  "viewType": "city|ocean|mountain|garden|pool|none",
-  "bedType": "single|double|queen|king|sofa_bed",
-  "size": "Number (sq ft)",
-  "description": "String",
-  "images": ["String"],
-  "isActive": "Boolean",
-  "isAvailable": "Boolean",
-  "maintenanceNotes": "String",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
-
-### Hotel Booking Model
-```json
-{
-  "_id": "ObjectId",
-  "customerId": "ObjectId (ref: User)",
-  "roomId": "ObjectId (ref: HotelRoom)",
-  "checkInDate": "Date",
-  "checkOutDate": "Date",
-  "numberOfGuests": "Number",
-  "totalPrice": "Number",
-  "status": "pending|confirmed|checked_in|checked_out|cancelled|no_show",
-  "specialRequests": "String",
-  "guestName": "String",
-  "guestEmail": "String",
-  "guestPhone": "String",
-  "paymentStatus": "pending|paid|partial|refunded",
-  "paymentMethod": "credit_card|debit_card|cash|bank_transfer|paypal|other",
-  "bookingSource": "website|phone|walk_in|travel_agent|booking_com|expedia|other",
-  "notes": "String",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
-
-### Property Model
-```json
-{
-  "_id": "ObjectId",
-  "title": "String",
-  "description": "String",
-  "propertyType": "residential|commercial|industrial|agricultural|land|mixed_use",
-  "listingType": "sale|rent|lease",
-  "address": {
-    "street": "String",
-    "city": "String",
-    "state": "String",
-    "zipCode": "String",
-    "country": "String"
+  "success": true,
+  "message": "Success message",
+  "data": [...],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "totalItems": 50,
+    "itemsPerPage": 12,
+    "hasNextPage": true,
+    "hasPrevPage": false
   },
-  "price": "Number",
-  "area": "Number",
-  "areaUnit": "sqft|sqm|acres|hectares",
-  "bedrooms": "Number",
-  "bathrooms": "Number",
-  "parking": "Number",
-  "amenities": ["String"],
-  "features": ["String"],
-  "images": ["String"],
-  "isActive": "Boolean",
-  "isFeatured": "Boolean",
-  "contactInfo": {
-    "name": "String",
-    "email": "String",
-    "phone": "String"
-  },
-  "agentId": "ObjectId (ref: User)",
-  "createdAt": "Date",
-  "updatedAt": "Date"
+  "count": 12
 }
 ```
-
-### Property Listing Model
-```json
-{
-  "_id": "ObjectId",
-  "propertyId": "ObjectId (ref: Property)",
-  "customerId": "ObjectId (ref: User)",
-  "listingType": "inquiry|offer|booking|sold|rented",
-  "status": "pending|reviewed|accepted|rejected|completed|cancelled",
-  "customerInfo": {
-    "name": "String",
-    "email": "String",
-    "phone": "String",
-    "message": "String"
-  },
-  "offerPrice": "Number",
-  "proposedRent": "Number",
-  "leaseDuration": "String",
-  "moveInDate": "Date",
-  "viewingSchedule": {
-    "date": "Date",
-    "time": "String",
-    "status": "scheduled|confirmed|completed|cancelled"
-  },
-  "paymentInfo": {
-    "amount": "Number",
-    "paymentMethod": "cash|bank_transfer|cheque|online_payment",
-    "paymentStatus": "pending|partial|completed|refunded"
-  },
-  "documents": [
-    {
-      "name": "String",
-      "url": "String",
-      "type": "String"
-    }
-  ],
-  "notes": "String",
-  "agentId": "ObjectId (ref: User)",
-  "createdAt": "Date",
-  "updatedAt": "Date"
-}
-```
-
----
-
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-PORT=3000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=admin_password
-RESEND_API_KEY=your_resend_api_key
-RESEND_FROM_EMAIL=noreply@yourdomain.com
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_REGION=your_aws_region
-AWS_BUCKET_NAME=your_s3_bucket_name
-```
-
----
 
 ## Rate Limiting
 
-API requests are rate-limited to prevent abuse:
-- **Anonymous requests**: 100 requests per hour
-- **Authenticated requests**: 1000 requests per hour
-- **Admin requests**: 5000 requests per hour
-
----
+API endpoints are rate-limited to prevent abuse. Excessive requests will return a 429 status code.
 
 ## CORS Policy
 
-The API allows requests from all origins in development. In production, configure the `cors()` middleware in `index.js` to restrict allowed origins.
+The API accepts requests from all origins during development. Production configuration may be more restrictive.
 
----
+## Version Information
 
-## Versioning
-
-Current API version: v1.0.0
-
----
-
-## Support
-
-For API support and questions, contact:
-- Email: support@eliteassociate.in
-- Phone: +91-XXXXXXXXXX
-
----
-
-*Last Updated: February 12, 2026*
+- **API Version**: v1
+- **Last Updated**: February 2026
+- **Backend**: Node.js with Express
+- **Database**: MongoDB
+- **Authentication**: JWT
+- **File Storage**: AWS S3
