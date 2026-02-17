@@ -773,6 +773,167 @@ Authorization: Bearer <your-jwt-token>
 **DELETE** `/queries/:id` - Delete query
 - **URL Parameters**: `id` (Query ID)
 
+### 4. DASHBOARD ROUTES (Admin Only)
+
+#### Main Dashboard
+
+**GET** `/dashboard/stats` - Get comprehensive dashboard statistics
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Dashboard statistics retrieved successfully",
+  "data": {
+    "overview": {
+      "totalUsers": 150,
+      "totalHotelRooms": 50,
+      "totalHotels": 3,
+      "totalRestaurants": 2,
+      "totalProperties": 25,
+      "totalPropertyListings": 40,
+      "totalQueries": 75,
+      "totalOrders": 200,
+      "activeBookings": 30,
+      "totalRevenue": 150000,
+      "recentRevenue": 25000,
+      "occupancyRate": 65
+    },
+    "bookingStats": [
+      { "_id": "pending", "count": 15 },
+      { "_id": "confirmed", "count": 10 },
+      { "_id": "checked_in", "count": 5 }
+    ],
+    "userRegistrationTrend": [
+      { "_id": "2026-02-10", "count": 5 },
+      { "_id": "2026-02-11", "count": 3 }
+    ],
+    "propertyTypeStats": [
+      { "_id": "villa", "count": 10 },
+      { "_id": "apartment", "count": 8 }
+    ],
+    "recentQueries": [
+      { "_id": "bar & restaurant", "count": 25 },
+      { "_id": "hotel", "count": 30 },
+      { "_id": "properties", "count": 20 }
+    ]
+  }
+}
+```
+
+#### Analytics Routes
+
+**GET** `/dashboard/analytics/revenue` - Get revenue analytics
+- **Query Parameters**: 
+  - `period`: day, week, month, year (default: month)
+  - `startDate`: YYYY-MM-DD (optional)
+  - `endDate`: YYYY-MM-DD (optional)
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Revenue analytics retrieved successfully",
+  "data": {
+    "revenueTrend": [
+      { "_id": "2026-01", "totalRevenue": 50000, "orderCount": 25, "averageOrderValue": 2000 },
+      { "_id": "2026-02", "totalRevenue": 75000, "orderCount": 35, "averageOrderValue": 2142 }
+    ],
+    "revenueByService": [
+      { "_id": "hotel", "totalRevenue": 80000, "count": 40 },
+      { "_id": "restaurant", "totalRevenue": 45000, "count": 30 }
+    ],
+    "period": "month"
+  }
+}
+```
+
+**GET** `/dashboard/analytics/bookings` - Get booking analytics
+- **Query Parameters**: `period`: day, week, month (default: month)
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Booking analytics retrieved successfully",
+  "data": {
+    "bookingTrends": [
+      { "_id": { "date": "2026-02", "status": "confirmed" }, "count": 15 },
+      { "_id": { "date": "2026-02", "status": "pending" }, "count": 8 }
+    ],
+    "roomTypeStats": [
+      { "_id": "deluxe", "totalBookings": 50, "totalRevenue": 75000 },
+      { "_id": "standard", "totalBookings": 30, "totalRevenue": 30000 }
+    ],
+    "floorOccupancy": [
+      { "floor": 1, "totalRooms": 15, "occupiedRooms": 8, "occupancyRate": 53.3 },
+      { "floor": 2, "totalRooms": 20, "occupiedRooms": 15, "occupancyRate": 75 }
+    ]
+  }
+}
+```
+
+**GET** `/dashboard/analytics/users` - Get user analytics
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "User analytics retrieved successfully",
+  "data": {
+    "userTrends": [
+      { "_id": "2026-01", "count": 25, "activeUsers": 20 },
+      { "_id": "2026-02", "count": 35, "activeUsers": 30 }
+    ],
+    "roleDistribution": [
+      { "_id": "customer", "count": 120 },
+      { "_id": "admin", "count": 5 }
+    ],
+    "activeInactiveStats": [
+      { "_id": true, "count": 125 },
+      { "_id": false, "count": 25 }
+    ]
+  }
+}
+```
+
+**GET** `/dashboard/analytics/properties` - Get property analytics
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Property analytics retrieved successfully",
+  "data": {
+    "listingStatusStats": [
+      { "_id": "available", "count": 25, "averagePrice": 4500000 },
+      { "_id": "pending", "count": 10, "averagePrice": 3800000 }
+    ],
+    "propertyTypeStats": [
+      { "_id": "villa", "count": 12, "averagePrice": 5200000 },
+      { "_id": "apartment", "count": 15, "averagePrice": 3500000 }
+    ],
+    "propertyInquiries": [
+      { "_id": "2026-01", "count": 8 },
+      { "_id": "2026-02", "count": 12 }
+    ]
+  }
+}
+```
+
+#### Real-time Data
+
+**GET** `/dashboard/realtime` - Get real-time dashboard statistics
+- **Response**:
+```json
+{
+  "success": true,
+  "message": "Real-time stats retrieved successfully",
+  "data": {
+    "onlineUsers": 12,
+    "pendingBookings": 8,
+    "todayRevenue": 5400,
+    "activeQueries": 15,
+    "lastUpdated": "2026-02-16T14:30:00.000Z"
+  }
+}
+```
+
 ## Error Responses
 
 All endpoints return consistent error responses:

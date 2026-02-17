@@ -14,6 +14,7 @@ import billingRoutes from './src/routes/billing.route.js';
 import userRoutes from './src/routes/admin/user.route.js';
 import profileRoutes from './src/routes/profile.route.js';
 import queryRoutes from './src/routes/query.route.js';
+import dashboardRoutes from './src/routes/dashboard.route.js';
 
 dotenv.config();
 const app = express();
@@ -66,6 +67,7 @@ app.use('/api/properties', propertyRoutes);
 app.use('/api/property-listings', propertyListingRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/queries', queryRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("Patil Associates Unified Backend API is running...");
